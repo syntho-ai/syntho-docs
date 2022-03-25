@@ -43,39 +43,41 @@ Airflow was not really made for DAG structures that can be different of each DAG
 
 ### Negative Consequences <!-- optional -->
 
-- [e.g., compromising quality attribute, follow-up decisions required, …]
-- …
+- Follow-up decision required after implementing more features in Syntho Core API.
+- Probably more custom solutions needed on Syntho Core API to support wanted features.
 
 ## Pros and Cons of the Options <!-- optional -->
 
-### [option 1]
+### Airflow
 
-[example | description | pointer to more information | …] <!-- optional -->
+Airflow is a platform to programmatically author, schedule and monitor workflows. Used as an application within our landscape, it would become the main point of communication between for the Syntho Core API to trigger certain workflows or update time-based scheduled workflows.
 
-- Good, because [argument a]
-- Good, because [argument b]
-- Bad, because [argument c]
-- … <!-- numbers of pros and cons can vary -->
+- Pro: Most complete tool for scheduling and executing workflows (DAGs)
+- Pro: A lot of integration possibilities and features
+- Pro: Extensive documentation
+- Pro: Easy Kubernetes integration
+- Con: Does not have a ‘core’ API, only available to be used as full airflow package
+- Con: Requires infrastructure and monitoring
+- Con: DAG structures can't be very complicated of compute heavy and is not a BP if it is dynamic
 
-### [option 2]
+### Syntho Core API (FastAPI)
 
-[example | description | pointer to more information | …] <!-- optional -->
+The management system for interacting with database, data storages and job configuration for all workflows. Does not include a scheduler at the moment, but is an asynchronous application with a possibility for adding background tasks.
 
-- Good, because [argument a]
-- Good, because [argument b]
-- Bad, because [argument c]
-- … <!-- numbers of pros and cons can vary -->
+- Pro: Would require less integration, since application is already being developed and in the product landscape
+- Pro: Not adding an additional scheduler application would decrease complexity of landscape.
+- Con: Will require more Python packages or custom tooling to facilitate some features
 
-### [option 3]
+### Ray Workflow
 
-[example | description | pointer to more information | …] <!-- optional -->
+Ray workflow is a low-level Airflow variant that support the creating of DAG-based workflows. 
 
-- Good, because [argument a]
-- Good, because [argument b]
-- Bad, because [argument c]
-- … <!-- numbers of pros and cons can vary -->
+- Pro: Low-level implemention of Airflow in a sense
+- Pro: Ray already being used in the application landscape
+- **!Con: Still in alpha phase**
 
 ## Links <!-- optional -->
 
-- [Link type](link to adr) <!-- example: Refined by [xxx](yyyymmdd-xxx.md) -->
-- … <!-- numbers of links can vary -->
+- [Airflow](https://airflow.apache.org/) <!-- example: Refined by [xxx](yyyymmdd-xxx.md) -->
+- [Ray](https://www.ray.io/)
+- [FastAPI](https://www.ray.io/)
