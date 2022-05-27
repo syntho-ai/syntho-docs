@@ -32,10 +32,8 @@ The structure of these files will look as follows:
 │       │   ├── Chart.yaml
 │       │   ├── README.md
 │       │   ├── crds
-│       │   │   ├── README.md
 │       │   │   └── cluster_crd.yaml
 │       │   ├── templates
-│       │   │   ├── README.md
 │       │   │   ├── _helpers.tpl
 │       │   │   ├── operator_cluster_scoped.yaml
 │       │   │   ├── operator_namespaced.yaml
@@ -73,7 +71,7 @@ We will assume that a secret named `syntho-cr-secret` has been created at this p
 
 ### JupyterHub
 
-Under the folder `helm/jupyterhub`, the files for the JupyterHub deployment can be found. We will need to adjust the file `values.yaml` in the upcoming sections. Once we reach the section [Deploy using helm](#deploy-using-helm), the `values.yaml` file should be correctly adjusted for your environment and ready to be used by Helm for deploying the application.
+Under the folder `helm/jupyterhub`, the files for the JupyterHub deployment can be found. We will need to adjust the file `values.yaml` in the upcoming sections. Once we reach the section [Deploy using helm - JupyterHub](#deploy-using-helm---jupyterhub), the `values.yaml` file should be correctly adjusted for your environment and ready to be used by Helm for deploying the application.
 
 #### Image
 
@@ -166,7 +164,7 @@ ingress:
   ]
 ```
 
-#### Deploy using Helm
+#### Deploy using Helm - JupyterHub
 
 After the values.yaml have been set correctly for JupyterHub, we can deploy the application using helm with the following commands:
 
@@ -194,3 +192,73 @@ helm upgrade --cleanup-on-fail \
 ```
 
 ### Ray
+
+Next we will need to deploy the Ray cluster to be used for scaling the Syntho Application over multiple nodes/workers. For this we will need access to the image `syntho-ray`. A pre-configured values.yaml can be found under `helm/ray/values.yaml`. Once configured, we can deploy using Helm by following the instructions under [Deploy using Helm - Ray](#deploy-using-helm---ray).
+
+#### Setting the image
+
+In the values.yaml file in `helm/ray`, we need to set the following fields to ensure the usage of the correct Docker image:
+
+```[yaml]
+operatorImage: <name-of-registry>/syntho-ray:<image-tag>
+image: <name-of-registry>/syntho-ray:<image-tag>
+```
+
+`<name-of-registry>` and `<image-tag>` will be provided by Syntho for your deployment.
+
+Next to setting the correct Docker image, we will need to define the Kubernetes `Secret` that we created under `imagePullSecrets`:
+
+```[yaml]
+imagePullSecrets: 
+    - name: syntho-cr-secret
+```
+
+#### Workers and nodes
+
+Depending on the size and amount of nodes of the cluster, we can adjust the amount of workers that Ray has available for tasks. Under `podTypes.rayHeadType` we can set the resources for the head node, which we recommend to keep as is in the provided file. This head node will mostly be used for administrative tasks in Ray and the worker nodes will be picking up most of the tasks for the Syntho Application.
+
+We recommend two pools of workers, where the first pool has a higher amount of memory, but a low amount of workers and the second pool with reverse conditions. Depending on the CPUs and Memory available in the node, the amount of CPUs and Memory can be set. An example of a cluster with two node pools, of 1 machine (autoscaling up to 3), with 16 CPUs and 64GB of RAM and another of 1 machine (autoscaling up to 3) with 8 CPUs and 32GB of RAM:
+
+```[yaml]
+rayWorkerType:
+    # minWorkers is the minimum number of Ray workers of this pod type to keep running.
+    minWorkers: 1
+    # maxWorkers is the maximum number of Ray workers of this pod type to which Ray will scale.
+    maxWorkers: 3
+    memory: 50Gi
+    CPU: 5
+    GPU: 0
+
+rayWorkerType2:
+    minWorkers: 3
+    maxWorkers: 5
+    memory: 8Gi
+    CPU: 2
+    GPU: 0
+```
+
+If autoscaling is enabled in Kubernetes, new nodes will be created once the Ray requirements become higher than the available resources. Please discuss with together with the Syntho Support which situation would fit your data requirements.
+
+#### Deploy using Helm - Ray
+
+Once the values have been set correctly in `values.yaml` under `helm/ray`, we can deploy the application to the cluster using the following command:
+
+```[sh]
+helm upgrade --cleanup-on-fail ray-cluster ./helm/ray --values values.yaml --namespace syntho 
+```
+
+## Testing the application
+
+Once both Ray and JupyterHub have been installed, login into the application in `http://<ip-address-or-dns>/hub`. Once an environment has been created, a simple test to check whether Ray installed correctly and is accessible for JupyterHub, is to run the following command in a `Python Notebook`:
+
+```[python]
+import ray
+
+ray.init("ray://ray-cluster-ray-head:10001")
+```
+
+This will connect to the Ray cluster and will return something like this:
+
+```[sh]
+ClientContext(dashboard_url='10.244.1.21:8265', python_version='3.9.5', ray_version='1.12.1', ray_commit='4863e33856b54ccf8add5cbe75e41558850a1b75', protocol_version='2022-03-16', _num_clients=1, _context_to_restore=<ray.util.client._ClientContext object at 0x7f6c24257b50>)
+```
