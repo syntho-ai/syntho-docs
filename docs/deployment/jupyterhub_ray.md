@@ -55,7 +55,7 @@ The images necessary for this deployment:
 
 ## Deployment using Helm
 
-We will be deploying the application with JupyterHub and Ray. We will deploy both applications in the same namespace, which we call `syntho` for now. Please see the section [JupyterHub](#jupyterhub) for the deployment of JupyterHub and the section [Ray](#ray) on the deployment of Ray. Together they from the total application landscape for this deployment scenario.
+We will be deploying the application with JupyterHub and Ray. We will deploy both applications in the same namespace, which we call `syntho` for now. Please see the section [JupyterHub](#jupyterhub) for the deployment of JupyterHub and the section [Ray](#ray) on the deployment of Ray. Together they form the total application landscape for this deployment scenario.
 
 If the namespace `syntho` does not exist, create it by running:
 
