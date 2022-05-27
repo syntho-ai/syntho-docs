@@ -108,7 +108,7 @@ hub:
 
 #### Application access
 
-Depending on the requirement for accessing the application, we can either select a `Loadbalancer` in Kubernetes to create a seperate `Loadbalancer` that can be used for accessing the application. If that is the case, the following values should be set like this:
+Depending on the requirement for accessing the application, we can either select a `Loadbalancer` in Kubernetes to create a separate `Loadbalancer` that can be used for accessing the application. If that is the case, the following values should be set like this:
 
 ```[yaml]
 proxy:
