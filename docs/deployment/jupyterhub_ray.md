@@ -55,7 +55,7 @@ The images necessary for this deployment:
 
 ## Deployment using Helm
 
-We will be deploying the application with JupyterHub and Ray. We will deploy both applications in the same namespace, which we call `syntho` for now. Please see the section [JupyterHub](#jupyterhub) for the deployment of JupyterHub and the section [Ray](#ray) on the deployment of Ray. Together they from the total application landscape for this deployment scenario.
+We will be deploying the application with JupyterHub and Ray. We will deploy both applications in the same namespace, which we call `syntho` for now. Please see the section [JupyterHub](#jupyterhub) for the deployment of JupyterHub and the section [Ray](#ray) on the deployment of Ray. Together they form the total application landscape for this deployment scenario.
 
 If the namespace `syntho` does not exist, create it by running:
 
@@ -67,7 +67,7 @@ Please read through the remaining sections to configure JupyterHub and Ray corre
 
 ### Setting up a Kubernetes Secret
 
-Depending on the received credentials from Syntho, a Kubernetes `Secret` should be created to use to pull the latest image from our docker registry. Please read more about creating `Secrets` [here](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/).
+Depending on the received credentials from Syntho, a Kubernetes `Secret` should be created to pull the latest image from our docker registry. Please read more about creating `Secrets` [here](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/).
 
 We will assume that a secret named `syntho-cr-secret` has been created at this point. Please contact the Syntho Support for your credentials.
 
@@ -77,7 +77,7 @@ Under the folder `helm/jupyterhub`, the files for the JupyterHub deployment can 
 
 #### Image
 
-The image for Syntho should be set under `singleuser.image.name` and `singleuser.image.tag`. It is also important is to fill the value of the created secret under `singleuser.image.pullSecrets`. An example of this would be:
+The image for Syntho should be set under `singleuser.image.name` and `singleuser.image.tag`. It is also important to fill the value of the created secret under `singleuser.image.pullSecrets`. An example of this would be:
 
 ```[yaml]
 singleuser:
@@ -92,7 +92,7 @@ singleuser:
 
 Under `hub.config`, we can set the desired authentication method when using JupyterHub. JupyterHub will create a personal space for each user with preexisting files that can be used to interact with the Syntho Application. An overview of all authentication methods can be found [here](https://zero-to-jupyterhub.readthedocs.io/en/latest/administrator/authentication.html#configuring-authenticator-classes).
 
-An YAML example using Azure Active Directory:
+A YAML example using Azure Active Directory:
 
 ```[yaml]
 hub:
@@ -108,7 +108,7 @@ hub:
 
 #### Application access
 
-Depending on the requirement for accessing the application, we can either select a `Loadbalancer` in Kubernetes to create a seperate `Loadbalancer` that can be used for accessing the application. If that is the case, the following values should be set like this:
+Depending on the requirement for accessing the application, we can either select a `Loadbalancer` in Kubernetes to create a separate `Loadbalancer` that can be used for accessing the application. If that is the case, the following values should be set like this:
 
 ```[yaml]
 proxy:
@@ -144,7 +144,7 @@ proxy:
     loadBalancerSourceRanges: []
 ```
 
-The Ingress can then be enabled by adjust the values for `ingress` as follows:
+The Ingress can then be enabled by adjusting the values for `ingress` as follows:
 
 ```[yaml]
 ingress:
