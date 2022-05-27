@@ -77,7 +77,7 @@ Under the folder `helm/jupyterhub`, the files for the JupyterHub deployment can 
 
 #### Image
 
-The image for Syntho should be set under `singleuser.image.name` and `singleuser.image.tag`. It is also important is to fill the value of the created secret under `singleuser.image.pullSecrets`. An example of this would be:
+The image for Syntho should be set under `singleuser.image.name` and `singleuser.image.tag`. It is also important to fill the value of the created secret under `singleuser.image.pullSecrets`. An example of this would be:
 
 ```[yaml]
 singleuser:
