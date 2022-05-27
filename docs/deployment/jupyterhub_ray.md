@@ -67,7 +67,7 @@ Please read through the remaining sections to configure JupyterHub and Ray corre
 
 ### Setting up a Kubernetes Secret
 
-Depending on the received credentials from Syntho, a Kubernetes `Secret` should be created to use to pull the latest image from our docker registry. Please read more about creating `Secrets` [here](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/).
+Depending on the received credentials from Syntho, a Kubernetes `Secret` should be created to pull the latest image from our docker registry. Please read more about creating `Secrets` [here](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/).
 
 We will assume that a secret named `syntho-cr-secret` has been created at this point. Please contact the Syntho Support for your credentials.
 
