@@ -156,14 +156,15 @@ ingress:
   hosts: ["<host-name>"]
   pathSuffix:
   pathType: Prefix
-  tls: [
-    {
-      "hosts": [
-        "<host-name>"
-      ],
-      "secretName": "k8s-jupyterhub-ingress-tls-secret"
-    }
-  ]
+  # Uncomment this part if cert-manager is used
+  #tls: [
+  #  {
+  #    "hosts": [
+  #      "<host-name>"
+  #    ],
+  #    "secretName": "k8s-jupyterhub-ingress-tls-secret"
+  #  }
+  #]
 ```
 
 #### Deploy using Helm - JupyterHub
