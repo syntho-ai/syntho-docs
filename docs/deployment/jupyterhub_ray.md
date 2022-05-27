@@ -144,7 +144,7 @@ proxy:
     loadBalancerSourceRanges: []
 ```
 
-The Ingress can then be enabled by adjust the values for `ingress` as follows:
+The Ingress can then be enabled by adjusting the values for `ingress` as follows:
 
 ```[yaml]
 ingress:
