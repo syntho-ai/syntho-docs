@@ -63,6 +63,8 @@ If the namespace `syntho` does not exist, create it by running:
 kubectl create namespace syntho
 ```
 
+Please read through the remaining sections to configure JupyterHub and Ray correctly for your environment.
+
 ### Setting up a Kubernetes Secret
 
 Depending on the received credentials from Syntho, a Kubernetes `Secret` should be created to use to pull the latest image from our docker registry. Please read more about creating `Secrets` [here](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/).
