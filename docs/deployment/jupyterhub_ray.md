@@ -55,15 +55,15 @@ The images necessary for this deployment:
 
 ## Deployment using Helm
 
-We will be deploying the application with JupyterHub and Ray. We will deploy both applications in the same namespace, which we call `syntho` for now. Please see the section [JupyterHub](#jupyterhub) for the deployment of JupyterHub and the section 
+We will be deploying the application with JupyterHub and Ray. We will deploy both applications in the same namespace, which we call `syntho` for now. Please see the section [JupyterHub](#jupyterhub) for the deployment of JupyterHub and the section [Ray](#ray) on the deployment of Ray. Together they from the total application landscape for this deployment scenario.
 
-If the namespace does not exist, create it by running:
+If the namespace `syntho` does not exist, create it by running:
 
 ```[bash]
 kubectl create namespace syntho
 ```
 
-### Setting up PullSecret
+### Setting up a Kubernetes Secret
 
 Depending on the received credentials from Syntho, a Kubernetes `Secret` should be created to use to pull the latest image from our docker registry. Please read more about creating `Secrets` [here](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/).
 
