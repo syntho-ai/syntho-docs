@@ -4,9 +4,9 @@
 
 To install the Syntho Application together with JupyterHub & Ray, the following requirements need to be met:
 
-- Have a running Kubernetes cluster available/
+- Have a running Kubernetes cluster available
   - Self managed, Azure Kubernetes Services (AKS), Amazon Elastic Kubernetes Service (EKS), or other Kubernetes (managed) solutions running Kubernetes 1.20 or higher.
-- kubectl installed.
+- `kubectl` installed.
   - For managing the Kubernetes cluster
 - Helm v3 installed.
   - See instructions on how to install Helm [here](https://helm.sh/docs/intro/install/).
