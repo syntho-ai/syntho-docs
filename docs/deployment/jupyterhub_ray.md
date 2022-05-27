@@ -92,7 +92,7 @@ singleuser:
 
 Under `hub.config`, we can set the desired authentication method when using JupyterHub. JupyterHub will create a personal space for each user with preexisting files that can be used to interact with the Syntho Application. An overview of all authentication methods can be found [here](https://zero-to-jupyterhub.readthedocs.io/en/latest/administrator/authentication.html#configuring-authenticator-classes).
 
-An YAML example using Azure Active Directory:
+A YAML example using Azure Active Directory:
 
 ```[yaml]
 hub:
