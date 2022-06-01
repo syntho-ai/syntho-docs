@@ -167,21 +167,63 @@ Once the `configuration.yaml` has been setup correctly, we can use the following
 ```[sh]
 ray up configuration.yaml
 ```
+Remember the IP address of the Ray head node (or the hostname of the machine), so that we can use that later to connect to the cluster from JupyterHub.
 
 ### Setting up JupyterHub
 
 We will be setting up JupyterHub using docker-compose in the dedicated instance for JupyterHub. The creation of the Ray cluster will have setup a virtual network that the Ray cluster nodes will use. It is important that the instance running JupyterHub is either added to or created in that network.
 
 We will then configure the environment variables and the JupyterHub configuration file in the next steps for the folder containing the docker-compose file for JupyterHub.
+
 #### Docker image
 
-In the environment variables
+In the environment variables, we need to set the following variable to use the correct docker image:
 
-#### Authentication method
+```[sh]
+DOCKER_NOTEBOOK_IMAGE=<registry>/syntho-jupyter:latest
+LOCAL_NOTEBOOK_IMAGE=<registry>/syntho-jupyter:latest
+```
 
+This will create a Docker environment for every user that logs in, using the syntho-jupyter image. 
 
 #### Application access
 
+Depending on how the application needs to be accessed, a simple IP address or DNS record can be used. Please remember the private or public IP address of the instance to assign it to a DNS record.
+
+If a DNS record (public or private) is used, it is recommended to setup HTTPS using SSL certificates. If there are certificates, they can be uploaded to the same directory as the docker-compose file. Next uncomment the following lines in `jupyterhub_config.py`:
+
+```[python]
+#c.JupyterHub.ssl_key = os.environ['SSL_KEY']
+#c.JupyterHub.ssl_cert = os.environ['SSL_CERT']
+```
+
+Next set the environment variables `SSL_KEY` and `SSL_CERT` to their correct values.
+
+#### Authentication method
+
+Next we will define the authentication method for the JupyterHub environment. There are a multitude of choices possible, see the [JupyterHub documentation](https://jupyterhub.readthedocs.io/en/stable/reference/authenticators.html) for all possibilities.
+
+We can define this in the file `jupyterhub_config.py`. An example config:
+
+```[python]
+c.JupyterHub.authenticator_class = 'jupyterhub.auth.DummyAuthenticator'
+```
+
+This specific authenticator will only act as a dummy login screen. Whatever the user types in, they will be logged in to an environment. We recommend a more secure option, like Azure AD. See an example of that here:
+
+```[python]
+import os
+from oauthenticator.azuread import AzureAdOAuthenticator
+c.JupyterHub.authenticator_class = AzureAdOAuthenticator
+
+c.Application.log_level = 'DEBUG'
+
+c.AzureAdOAuthenticator.tenant_id = os.environ.get('AAD_TENANT_ID')
+
+c.AzureAdOAuthenticator.oauth_callback_url = 'http://{your-domain}/hub/oauth_callback'
+c.AzureAdOAuthenticator.client_id = '{AAD-APP-CLIENT-ID}'
+c.AzureAdOAuthenticator.client_secret = '{AAD-APP-CLIENT-SECRET}'
+```
 
 #### Deploy using docker-compose - JupyterHub
 
@@ -195,12 +237,12 @@ If any issues arise during this step, please contact the Syntho Support.
 
 ## Testing the application
 
-Once both Ray and JupyterHub have been installed, login into the application in `http://<ip-address-or-dns>/hub`. Once an environment has been created, a simple test to check whether Ray installed correctly and is accessible for JupyterHub, is to run the following command in a `Python Notebook`:
+Once both Ray and JupyterHub have been installed, login into the application in `http://<ip-address-or-dns-of-jupyterhub>/hub`. Once an environment has been created, a simple test to check whether Ray installed correctly and is accessible for JupyterHub, is to run the following command in a `Python Notebook`:
 
 ```[python]
 import ray
 
-ray.init("ray://ray-cluster-ray-head:10001")
+ray.init("ray://<ip-or-hostname-of-ray-cluster-head>:10001")
 ```
 
 This will connect to the Ray cluster and will return something like this:
