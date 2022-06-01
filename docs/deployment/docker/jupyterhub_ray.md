@@ -2,7 +2,7 @@
 
 ## Introduction
 
-Deploying the Syntho Application with JupyterHub/Ray solution using Docker can be done a few ways:
+To use the Syntho Application for this specific deployment option, we need to install both Ray and JupyterHub as part of this Syntho Application. JupyterHub will be used as the interface running Python Notebooks that run our Syntho Application on the Ray cluster. Deploying the Syntho Application with this JupyterHub/Ray solution using Docker can be done a few ways:
 
 - Option 1: Depending on whether support for for autoscaling Ray workers is necessary, we can either deploy by using the Ray cluster manager directly in the following cloud providers: AWS, GCP, Azure.
 The Ray cluster manager will enable autoscaling based on a given configuration. We will then separately deploy a single instance running JupyterHub using `docker-compose` in the same network as the Ray cluster. See section [Deployment using Ray cluster manager](#deployment-using-ray-cluster-manager-option-1) (Recommended)
@@ -234,6 +234,16 @@ docker-compose up -d
 ```
 
 If any issues arise during this step, please contact the Syntho Support.
+
+## Deployment using manual Ray cluster (Option 2)
+
+The deployment of Option 1 overlaps with Option 2 when it comes to deploying JupyterHub. Please refer to section [Setting up JupyterHub](#setting-up-jupyterhub) for the instructions on how to deploy JupyterHub. We will use the remaining VM instances to run certain Docker commands on to create the head node and the corresponding worker nodes. Please make sure that they are part of the same network, so that we can reach the other machines on most ports.
+
+### Creating the head node
+
+On the VM instance that is designated to run as the head node, make sure that Docker is installed. 
+
+### Creating the worker nodes
 
 ## Testing the application
 
