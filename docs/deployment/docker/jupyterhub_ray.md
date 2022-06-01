@@ -2,7 +2,7 @@
 
 ## Introduction
 
-Deploying our JupyterHub/Ray solution using Docker containers can be done a few ways:
+Deploying the Syntho Application with JupyterHub/Ray solution using Docker can be done a few ways:
 
 - Option 1: Depending on whether support for for autoscaling Ray workers is necessary, we can either deploy by using the Ray cluster manager directly in the following cloud providers: AWS, GCP, Azure.
 The Ray cluster manager will enable autoscaling based on a given configuration. We will then separately deploy a single instance running JupyterHub using `docker-compose` in the same network as the Ray cluster. See section [Deployment using Ray cluster manager](#deployment-using-ray-cluster-manager-option-1) (Recommended)
@@ -38,21 +38,102 @@ The images necessary for this deployment for both:
   - Version: latest
   - Has the latest version of JupyterHub installed that is compatible with the Syntho Application.
 
+### Login into container registry
+
+On each of the VM instances, we need to login into the registry to access the Syntho docker images. Please request your credentials with the Syntho Support. Once the credentials have been received, the following command can be used in each VM instance to login into the registry:
+
+```[sh]
+docker login <registry> -u <username>
+```
+
+The registry, username and password will be provided by the Syntho Support.
+
 ## Deployment using Ray cluster manager (Option 1)
 
 We will be deploying the application with JupyterHub and Ray. We will reserve 2 or more VM instances for Ray and 1 for JupyterHub.
 
 Please see the section [JupyterHub](#jupyterhub) for the deployment of JupyterHub and the section [Ray](#ray) on the deployment of Ray. Together they form the total application landscape for this deployment scenario.
 
-Please read through the remaining sections to configure JupyterHub and Ray correctly for your environment.
+### Configuring the Ray configuration file
 
-### Setting up a Kubernetes Secret
+We will go through the sections necessary to adjust in the `configuration.yaml` file for Ray. Once completed, we can create the cluster by running `ray up configuration.yaml`.
 
-Depending on the received credentials from Syntho, a Kubernetes `Secret` should be created to pull the latest image from our docker registry. Please read more about creating `Secrets` [here](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/).
+#### Setting the image
 
-We will assume that a secret named `syntho-cr-secret` has been created at this point. Please contact the Syntho Support for your credentials.
+In the `configuration.yaml` file, we need to set the right image for Ray to use. Under `docker.image` we can set the image to use. Example:
 
-### JupyterHub
+```[yaml]
+docker:
+    image: "<registry>/syntho-ray:latest" 
+```
+
+#### Configuring the nodes
+
+Under the section `available_node_types` we can set the amount of nodes that we want to have available. Each section under `available_node_types` defines the amount of workers and the configuration of the node. We will always start with an configuration block for the head node, followed by the workers. An example configuration is:
+
+```[yaml]
+available_node_types:
+    ray.head.default:
+        # The resources provided by this node type.
+        resources: {"CPU": 4}
+        # Provider-specific config, e.g. instance type.
+        node_config:
+            azure_arm_parameters:
+                vmSize: Standard_D4s_v4
+                # List images https://docs.microsoft.com/en-us/azure/virtual-machines/linux/cli-ps-findimage
+                imagePublisher: microsoft-dsvm
+                imageOffer: ubuntu-1804
+                imageSku: 1804-gen2
+                imageVersion: latest
+    ray.worker.default:
+        # The minimum number of worker nodes of this type to launch.
+        # This number should be >= 0.
+        min_workers: 2
+        # The maximum number of worker nodes of this type to launch.
+        # This takes precedence over min_workers.
+        max_workers: 3
+        # The resources provided by this node type.
+        resources: {"CPU": 32}
+        # Provider-specific config, e.g. instance type.
+        node_config:
+            azure_arm_parameters:
+                vmSize: Standard_D32s_v4
+                # List images https://docs.microsoft.com/en-us/azure/virtual-machines/linux/cli-ps-findimage
+                imagePublisher: microsoft-dsvm
+                imageOffer: ubuntu-1804
+                imageSku: 1804-gen2
+                imageVersion: latest
+                # optionally set priority to use Spot instances
+                priority: Spot
+                # set a maximum price for spot instances if desired
+                # billingProfile:
+                #     maxPrice: -1
+```
+
+In this case, we have set the node configuration for Azure instances. The head node uses 1 Standard_D4s_v3 instance with a pre-configured Ubuntu 18.04 image. This image has Docker pre-installed.
+
+For the workers, we have set the default amount of workers to be 2 (`available_node_types.ray_worker_default.min_workers`). In case that the resources are being over-used, this configuration will auto-scale up to 3 workers (`available_node_types.ray_worker_default.max_workers`). To keep costs lower, we used spot instances (`available_node_types.ray_worker_default.node_config.azure_arm_parameters.priority`).
+
+We can adjust the amount of workers Ray will spawn by adjust the `resources` parameter. For now we have set this value to be the same as the amount of CPU's available for the given instances.
+
+#### Configuring file mounts
+
+To be able to connect to the head node, it is recommended that a SSH public key is uploaded on the machines from the machine running the Ray commands. We can also upload other files if desired. Here's an example of configuring the file mounts:
+
+```[yaml]
+file_mounts: {
+#    "/path1/on/remote/machine": "/path1/on/local/machine",
+     "~/.ssh/id_rsa.pub": "~/.ssh/id_rsa.pub",
+}
+```
+
+This example will upload the public key `~/.ssh/id_rsa.pub` on the local machine to all nodes.
+
+#### Setting up the registry credentials
+
+In this setup, the Ray cluster manager will create all the instances. We have to provide the correct command and credentials for docker to work 
+
+### Installing JupyterHub
 
 Under the folder `helm/jupyterhub`, the files for the JupyterHub deployment can be found. We will need to adjust the file `values.yaml` in the upcoming sections. Once we reach the section [Deploy using helm - JupyterHub](#deploy-using-helm---jupyterhub), the `values.yaml` file should be correctly adjusted for your environment and ready to be used by Helm for deploying the application.
 
@@ -89,64 +170,6 @@ hub:
 
 #### Application access
 
-Depending on the requirement for accessing the application, we can either select a `Loadbalancer` in Kubernetes to create a separate `Loadbalancer` that can be used for accessing the application. If that is the case, the following values should be set like this:
-
-```[yaml]
-proxy:
-  service:
-    type: LoadBalancer
-    labels: {}
-    annotations: {}
-    nodePorts:
-      http:
-      https:
-    disableHttpPort: false
-    extraPorts: []
-    loadBalancerIP:
-    loadBalancerSourceRanges: []
-```
-
-To use an `Ingress` of any kind in Kubernetes to be able to assign a DNS record, please configure your Ingress Controller (see overview of Ingress Controllers [here](https://kubernetes.io/docs/concepts/services-networking/ingress-controllers/)). We recommend the NGINX controller, which can additionally be installed using Helm (see [this link](https://docs.nginx.com/nginx-ingress-controller/installation/installation-with-helm/)).
-
-In the case of using an ingress controller, please adjust the values of `proxy.service.type` as follows:
-
-```[yaml]
-proxy:
-  service:
-    type: ClusterIP
-    labels: {}
-    annotations: {}
-    nodePorts:
-      http:
-      https:
-    disableHttpPort: false
-    extraPorts: []
-    loadBalancerIP:
-    loadBalancerSourceRanges: []
-```
-
-The Ingress can then be enabled by adjusting the values for `ingress` as follows:
-
-```[yaml]
-ingress:
-  enabled: true
-  annotations:
-    kubernetes.io/ingress.class: nginx
-    # If cert-manager is used for HTTPS certs, enable this line
-    # cert-manager.io/cluster-issuer: "<issuer-name>"
-  hosts: ["<host-name>"]
-  pathSuffix:
-  pathType: Prefix
-  # Uncomment this part if cert-manager is used
-  #tls: [
-  #  {
-  #    "hosts": [
-  #      "<host-name>"
-  #    ],
-  #    "secretName": "k8s-jupyterhub-ingress-tls-secret"
-  #  }
-  #]
-```
 
 #### Deploy using Helm - JupyterHub
 
@@ -163,73 +186,6 @@ helm upgrade --cleanup-on-fail \
 ```
 
 If any issues arise during this step, please contact the Syntho Support.
-
-#### Upgrading JupyterHyb Syntho
-
-If updates are available, please adjust the tag under `singleuser.image.tag` to the latest version. Once that is done, the application can be updated using the following command:
-
-```[sh]
-helm upgrade --cleanup-on-fail \
-  jupyterhub-syntho jupyterhub/jupyterhub \
-  --namespace syntho \
-  --values values.yaml
-```
-
-### Ray
-
-Next we will need to deploy the Ray cluster to be used for scaling the Syntho Application over multiple nodes/workers. For this we will need access to the image `syntho-ray`. A pre-configured values.yaml can be found under `helm/ray/values.yaml`. Once configured, we can deploy using Helm by following the instructions under [Deploy using Helm - Ray](#deploy-using-helm---ray).
-
-#### Setting the image
-
-In the values.yaml file in `helm/ray`, we need to set the following fields to ensure the usage of the correct Docker image:
-
-```[yaml]
-operatorImage: <name-of-registry>/syntho-ray:<image-tag>
-image: <name-of-registry>/syntho-ray:<image-tag>
-```
-
-`<name-of-registry>` and `<image-tag>` will be provided by Syntho for your deployment.
-
-Next to setting the correct Docker image, we will need to define the Kubernetes `Secret` that we created under `imagePullSecrets`:
-
-```[yaml]
-imagePullSecrets: 
-    - name: syntho-cr-secret
-```
-
-#### Workers and nodes
-
-Depending on the size and amount of nodes of the cluster, we can adjust the amount of workers that Ray has available for tasks. Under `podTypes.rayHeadType` we can set the resources for the head node, which we recommend to keep as is in the provided file. This head node will mostly be used for administrative tasks in Ray and the worker nodes will be picking up most of the tasks for the Syntho Application.
-
-We recommend two pools of workers, where the first pool has a higher amount of memory, but a low amount of workers and the second pool with reverse conditions. Depending on the CPUs and Memory available in the node, the amount of CPUs and Memory can be set. An example of a cluster with two node pools, of 1 machine (autoscaling up to 3), with 16 CPUs and 64GB of RAM and another of 1 machine (autoscaling up to 3) with 8 CPUs and 32GB of RAM:
-
-```[yaml]
-rayWorkerType:
-    # minWorkers is the minimum number of Ray workers of this pod type to keep running.
-    minWorkers: 1
-    # maxWorkers is the maximum number of Ray workers of this pod type to which Ray will scale.
-    maxWorkers: 3
-    memory: 50Gi
-    CPU: 5
-    GPU: 0
-
-rayWorkerType2:
-    minWorkers: 3
-    maxWorkers: 5
-    memory: 8Gi
-    CPU: 2
-    GPU: 0
-```
-
-If autoscaling is enabled in Kubernetes, new nodes will be created once the Ray requirements become higher than the available resources. Please discuss with together with the Syntho Support which situation would fit your data requirements.
-
-#### Deploy using Helm - Ray
-
-Once the values have been set correctly in `values.yaml` under `helm/ray`, we can deploy the application to the cluster using the following command:
-
-```[sh]
-helm upgrade --cleanup-on-fail ray-cluster ./helm/ray --values values.yaml --namespace syntho 
-```
 
 ## Testing the application
 
