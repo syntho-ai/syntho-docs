@@ -4,7 +4,7 @@
 
 To install the Syntho Application together with JupyterHub & Ray, the following requirements need to be met:
 
-- Have a running Kubernetes cluster available
+- A running Kubernetes cluster available
   - Self managed, Azure Kubernetes Services (AKS), Amazon Elastic Kubernetes Service (EKS), or other Kubernetes (managed) solutions running Kubernetes 1.20 or higher.
 - `kubectl` installed.
   - For managing the Kubernetes cluster
@@ -42,7 +42,7 @@ The structure of these files will look as follows:
 │       └── values.yaml
 ```
 
-Please also request access to the Docker images for JupyterHub & Ray. These images will have all the necessary software installed to run the Syntho application correctly. We will set the credentials for them in Kubernetes using `ImagePullSecrets` later.
+Please also request access to the Docker images for JupyterHub & Ray. These images will have all the necessary software installed to run the Syntho application correctly. The credentials are set in Kubernetes using `ImagePullSecrets` later.
 
 The images necessary for this deployment:
 
@@ -55,7 +55,7 @@ The images necessary for this deployment:
 
 ## Deployment using Helm
 
-We will be deploying the application with JupyterHub and Ray. We will deploy both applications in the same namespace, which we call `syntho` for now. Please see the section [JupyterHub](#jupyterhub) for the deployment of JupyterHub and the section [Ray](#ray) on the deployment of Ray. Together they form the total application landscape for this deployment scenario.
+The application is deployed with JupyterHub and Ray. Both applications are deployed in the same namespace, called `syntho` for now. Please see the section [JupyterHub](#jupyterhub) for the deployment of JupyterHub and the section [Ray](#ray) on the deployment of Ray. Together they form the total application landscape for this deployment method.
 
 If the namespace `syntho` does not exist, create it by running:
 
@@ -77,7 +77,7 @@ Under the folder `helm/jupyterhub`, the files for the JupyterHub deployment can 
 
 #### Image
 
-The image for Syntho should be set under `singleuser.image.name` and `singleuser.image.tag`. It is also important to fill the value of the created secret under `singleuser.image.pullSecrets`. An example of this would be:
+The image for Syntho should be set under `singleuser.image.name` and `singleuser.image.tag`. It is important to fill the value of the created secret under `singleuser.image.pullSecrets`. An example of this would be:
 
 ```[yaml]
 singleuser:
@@ -169,7 +169,7 @@ ingress:
 
 #### Deploy using Helm - JupyterHub
 
-After the values.yaml have been set correctly for JupyterHub, we can deploy the application using helm with the following commands:
+After the values.yaml have been set correctly for JupyterHub, the application can be deployed using helm with the following commands:
 
 ```[sh]
 helm repo add jupyterhub https://jupyterhub.github.io/helm-chart/
@@ -200,7 +200,7 @@ Next we will need to deploy the Ray cluster to be used for scaling the Syntho Ap
 
 #### Setting the image
 
-In the values.yaml file in `helm/ray`, we need to set the following fields to ensure the usage of the correct Docker image:
+In the values.yaml file in `helm/ray`, set the following fields to ensure the usage of the correct Docker image:
 
 ```[yaml]
 operatorImage: <name-of-registry>/syntho-ray:<image-tag>
@@ -209,7 +209,7 @@ image: <name-of-registry>/syntho-ray:<image-tag>
 
 `<name-of-registry>` and `<image-tag>` will be provided by Syntho for your deployment.
 
-Next to setting the correct Docker image, we will need to define the Kubernetes `Secret` that we created under `imagePullSecrets`:
+Next to setting the correct Docker image, define the Kubernetes `Secret` that is created under `imagePullSecrets`:
 
 ```[yaml]
 imagePullSecrets: 
@@ -218,7 +218,7 @@ imagePullSecrets:
 
 #### Workers and nodes
 
-Depending on the size and amount of nodes of the cluster, we can adjust the amount of workers that Ray has available for tasks. Under `podTypes.rayHeadType` we can set the resources for the head node, which we recommend to keep as is in the provided file. This head node will mostly be used for administrative tasks in Ray and the worker nodes will be picking up most of the tasks for the Syntho Application.
+Depending on the size and amount of nodes of the cluster, adjust the amount of workers that Ray has available for tasks. Under `podTypes.rayHeadType` we can set the resources for the head node, which we recommend to keep as is in the provided file. This head node will mostly be used for administrative tasks in Ray and the worker nodes will be picking up most of the tasks for the Syntho Application.
 
 We recommend two pools of workers, where the first pool has a higher amount of memory, but a low amount of workers and the second pool with reverse conditions. Depending on the CPUs and Memory available in the node, the amount of CPUs and Memory can be set. An example of a cluster with two node pools, of 1 machine (autoscaling up to 3), with 16 CPUs and 64GB of RAM and another of 1 machine (autoscaling up to 3) with 8 CPUs and 32GB of RAM:
 
@@ -240,7 +240,7 @@ rayWorkerType2:
     GPU: 0
 ```
 
-If autoscaling is enabled in Kubernetes, new nodes will be created once the Ray requirements become higher than the available resources. Please discuss with together with the Syntho Support which situation would fit your data requirements.
+If autoscaling is enabled in Kubernetes, new nodes will be created once the Ray requirements are higher than the available resources. Please discuss with together with the Syntho Support which situation would fit your data requirements.
 
 #### Deploy using Helm - Ray
 
