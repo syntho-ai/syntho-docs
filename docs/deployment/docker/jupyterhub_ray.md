@@ -58,6 +58,14 @@ Please see the section [JupyterHub](#jupyterhub) for the deployment of JupyterHu
 
 We will go through the sections necessary to adjust in the `configuration.yaml` file for Ray. Once completed, we can create the cluster by running `ray up configuration.yaml`.
 
+#### Setting the name of the cluster
+
+The name of the cluster can be set using the `cluster_name` block. See:
+
+```[yaml]
+cluster_name: syntho_cluster
+```
+
 #### Setting the image
 
 In the `configuration.yaml` file, we need to set the right image for Ray to use. Under `docker.image` we can set the image to use. Example:
@@ -72,6 +80,11 @@ docker:
 Under the section `available_node_types` we can set the amount of nodes that we want to have available. Each section under `available_node_types` defines the amount of workers and the configuration of the node. We will always start with an configuration block for the head node, followed by the workers. An example configuration is:
 
 ```[yaml]
+
+# The maximum number of workers nodes to launch in addition to the head
+# node.
+max_workers: 4
+
 available_node_types:
     ray.head.default:
         # The resources provided by this node type.
@@ -114,6 +127,8 @@ In this case, we have set the node configuration for Azure instances. The head n
 
 For the workers, we have set the default amount of workers to be 2 (`available_node_types.ray_worker_default.min_workers`). In case that the resources are being over-used, this configuration will auto-scale up to 3 workers (`available_node_types.ray_worker_default.max_workers`). To keep costs lower, we used spot instances (`available_node_types.ray_worker_default.node_config.azure_arm_parameters.priority`).
 
+We also need to set the amount of workers on `max_workers`, which represents the amount of workers that can be spawned (not counting the head node). 
+
 We can adjust the amount of workers Ray will spawn by adjust the `resources` parameter. For now we have set this value to be the same as the amount of CPU's available for the given instances.
 
 #### Configuring file mounts
@@ -131,58 +146,49 @@ This example will upload the public key `~/.ssh/id_rsa.pub` on the local machine
 
 #### Setting up the registry credentials
 
-In this setup, the Ray cluster manager will create all the instances. We have to provide the correct command and credentials for docker to work 
-
-### Installing JupyterHub
-
-Under the folder `helm/jupyterhub`, the files for the JupyterHub deployment can be found. We will need to adjust the file `values.yaml` in the upcoming sections. Once we reach the section [Deploy using helm - JupyterHub](#deploy-using-helm---jupyterhub), the `values.yaml` file should be correctly adjusted for your environment and ready to be used by Helm for deploying the application.
-
-#### Image
-
-The image for Syntho should be set under `singleuser.image.name` and `singleuser.image.tag`. It is also important to fill the value of the created secret under `singleuser.image.pullSecrets`. An example of this would be:
+In this setup, the Ray cluster manager will create all the instances. We have to provide the correct command and credentials for docker to work. We will do so by setting up the block `initialization_commands`. An example of this block:
 
 ```[yaml]
-singleuser:
-  image:
-    name: synthoregistry.azurecr.io/syntho-jupyterhub
-    tag: 0.2.13
-    pullPolicy:
-    pullSecrets: ["<your-secret-name>"]
+initialization_commands:
+    # enable docker setup
+    - sudo usermod -aG docker $USER || true
+    - sleep 10  # delay to avoid docker permission denied errors
+    # get rid of annoying Ubuntu message
+    - touch ~/.sudo_as_admin_successful
+    - docker login <registry> -u <username> -p <password>
 ```
+
+To prevent an issues, we first add the current user to the docker group and remove the standard Ubuntu messages. Once that is done, we call `docker login` to connect to the registry. We included the password flag `-p` here, since we can't provide CLI input with the password in this way.
+
+### Creating the Ray cluster
+
+Once the `configuration.yaml` has been setup correctly, we can use the following command to create the Ray cluster:
+
+```[sh]
+ray up configuration.yaml
+```
+
+### Setting up JupyterHub
+
+We will be setting up JupyterHub using docker-compose in the dedicated instance for JupyterHub. The creation of the Ray cluster will have setup a virtual network that the Ray cluster nodes will use. It is important that the instance running JupyterHub is either added to or created in that network.
+
+We will then configure the environment variables and the JupyterHub configuration file in the next steps for the folder containing the docker-compose file for JupyterHub.
+#### Docker image
+
+In the environment variables
 
 #### Authentication method
 
-Under `hub.config`, we can set the desired authentication method when using JupyterHub. JupyterHub will create a personal space for each user with preexisting files that can be used to interact with the Syntho Application. An overview of all authentication methods can be found [here](https://zero-to-jupyterhub.readthedocs.io/en/latest/administrator/authentication.html#configuring-authenticator-classes).
-
-A YAML example using Azure Active Directory:
-
-```[yaml]
-hub:
-  config:
-    AzureAdOAuthenticator:
-      client_id: your-client-id
-      client_secret: your-client-secret
-      oauth_callback_url: https://your-jupyterhub-domain/hub/oauth_callback
-      tenant_id: your-tenant-id
-    JupyterHub:
-      authenticator_class: azuread
-```
 
 #### Application access
 
 
-#### Deploy using Helm - JupyterHub
+#### Deploy using docker-compose - JupyterHub
 
-After the values.yaml have been set correctly for JupyterHub, we can deploy the application using helm with the following commands:
+Once the configuration is done, we can run the containers in detached mode using the following command:
 
 ```[sh]
-helm repo add jupyterhub https://jupyterhub.github.io/helm-chart/
-helm repo update
-
-helm upgrade --cleanup-on-fail \
-  --install jupyterhub-syntho jupyterhub/jupyterhub \
-  --namespace syntho \
-  --values values.yaml
+docker-compose up -d
 ```
 
 If any issues arise during this step, please contact the Syntho Support.
