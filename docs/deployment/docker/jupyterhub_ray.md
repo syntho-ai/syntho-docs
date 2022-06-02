@@ -15,6 +15,7 @@ To install the Syntho Application together with JupyterHub & Ray, the following 
 
 - Have at least 3 VM instances running.
   - OS: Ubuntu 18.04 or higher.
+  - Preferably with SSD storage.
   - Docker 1.13.0+ ​installed.
   - `docker-compose` 2.x.x  installed.
   - `docker-compose` file version will be v3.
@@ -142,7 +143,7 @@ file_mounts: {
 }
 ```
 
-This example will upload the public key `~/.ssh/id_rsa.pub` on the local machine to all nodes.
+This example will upload the public key `~/.ssh/id_rsa.pub` on the local machine to all nodes. Please adjust this to include a public key of your choice that will be uploaded to the Ray nodes. This key can be used for diagnostic purposes, like retrieving the logs from a certain node. Any other file that is necessary to be on all the machines can be added here as well.
 
 #### Setting up the registry credentials
 
@@ -241,9 +242,40 @@ The deployment of Option 1 overlaps with Option 2 when it comes to deploying Jup
 
 ### Creating the head node
 
-On the VM instance that is designated to run as the head node, make sure that Docker is installed. 
+On the VM instance that is designated to run as the head node, make sure that Docker is installed and the `docker login` has been executed with the supplied credentials for the container registry. In the folder `docker-compose/ray`, copy the file `docker-compose-head.yaml` to the head node instance.
+
+No configuration needs to be adjusted for this, we can now simply run:
+
+```[sh]
+docker-compose up
+```
+
+Once the container is started, look into the logs by using `docker-compose logs` and note down the IP address found in this line:
+
+```[sh]
+ray-head  | 2022-06-02 00:37:05,751     INFO scripts.py:744 -- To connect to this Ray runtime from another node, run
+ray-head  | 2022-06-02 00:37:05,752     INFO scripts.py:747 --   ray start --address='<ip-address>:6379'
+```
+
+This IP address should be the private IP from within the created network. We will need this IP as an environment variable for the worker to correctly connect to the head node instance.
 
 ### Creating the worker nodes
+
+On the VM instances that are assigned as the workers, we need to use the file `docker-compose-worker.yaml` to run the worker. Also make sure that `docker login` has been run on this machine, so that we have access to the registry containing the container.
+
+First we need to add the environment variable with the head node IP. Please create the file `.env` and add:
+
+```[sh]
+RAY_HEAD_IP=<ip-of-head-node>
+```
+
+Once this `.env` file is created, we can simply run:
+
+```[sh]
+docker-compose up
+```
+
+This should create the worker and connect it to the head node. If any issues arise, make sure that ports 6379 and 10001 are accessible on the head node for all workers.
 
 ## Testing the application
 
