@@ -7,7 +7,7 @@ To use the Syntho Application for this specific deployment option, we need to in
 - Option 1: Depending on whether support for for autoscaling Ray workers is necessary, we can either deploy by using the Ray cluster manager directly in the following cloud providers: AWS, GCP, Azure.
 The Ray cluster manager will enable autoscaling based on a given configuration. We will then separately deploy a single instance running JupyterHub using `docker-compose` in the same network as the Ray cluster. See section [Deployment using Ray cluster manager](#deployment-using-ray-cluster-manager-option-1) (Recommended)
 
-- Option 2: Deploying Ray instances manually using Docker. Autoscaling using Ray will not be available and the nodes need to be connected manually to the head node of Ray. JupyterHub will still be deployed using `docker-compose`. See section [Deployment]
+- Option 2: Deploying Ray instances manually using Docker. Autoscaling using Ray will not be available and the nodes need to be connected manually to the head node of Ray. JupyterHub will still be deployed using `docker-compose`. See section [Deployment using manual Ray cluster (Option 2)](#deployment-using-manual-ray-cluster-option-2)
 
 ## Requirements
 
