@@ -28,7 +28,7 @@ To install the Syntho Application together with JupyterHub & Ray, the following 
 
 To prepare this deployment, please download the configuration files provided by Syntho for this particular deployment setup. If option 1 was selected, a Ray configuration file using the YAML format will be provided. We will go over the changes necessary to configure this configuration file correctly.
 
-Please also request access to the Docker images for JupyterHub & Ray. These images will have all the necessary software installed to run the Syntho application correctly. All of the VM instances need to log into the registry using `docker login`, see the section [Login into container registry](#login-into-container-registry).
+Please also request access to the Docker images for JupyterHub & Ray. These images will have all the necessary software installed to run the Syntho application correctly. All of the VM instances need to log into the registry using `docker login`, see the section [Login into container registry](#login-into-container-registry)
 
 The images necessary for this deployment for both:
 
@@ -78,7 +78,7 @@ docker:
 
 #### Configuring the nodes
 
-Under the section `available_node_types` we can set the amount of nodes that we want to have available. Each section under `available_node_types` defines the amount of workers and the configuration of the node. We will always start with an configuration block for the head node, followed by the workers. An example configuration is:
+Under the section `available_node_types` we can set the amount of nodes that we want to have available. Each section under `available_node_types` defines the amount of workers and the configuration of the node. We will always start with a configuration block for the head node, followed by the workers. An example configuration is:
 
 ```[yaml]
 
@@ -132,7 +132,7 @@ For the workers, we have set the default amount of workers to be 2 (`available_n
 
 We also need to set the amount of workers on `max_workers`, which represents the amount of workers that can be spawned (not counting the head node). 
 
-We can adjust the amount of workers Ray will spawn by adjust the `resources` parameter. For now we have set this value to be the same as the amount of CPU's available for the given instances.
+We can adjust the amount of workers Ray will spawn by adjusting the `resources` parameter. For now we have set this value to be the same as the amount of CPUs available for the given instances.
 
 #### Configuring file mounts
 
@@ -206,13 +206,7 @@ Next set the environment variables `SSL_KEY` and `SSL_CERT` to their correct val
 
 Next we will define the authentication method for the JupyterHub environment. There are a multitude of choices possible, see the [JupyterHub documentation](https://jupyterhub.readthedocs.io/en/stable/reference/authenticators.html) for all possibilities.
 
-We can define this in the file `jupyterhub_config.py`. An example config:
-
-```[python]
-c.JupyterHub.authenticator_class = 'jupyterhub.auth.DummyAuthenticator'
-```
-
-This specific authenticator will only act as a dummy login screen. Whatever the user types in, they will be logged in to an environment. We recommend a more secure option, like Azure AD. See an example of that here:
+We can define this in the file `jupyterhub_config.py`. We recommend a more secure option, like Azure AD. See an example of that here:
 
 ```[python]
 import os
