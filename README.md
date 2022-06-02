@@ -57,7 +57,7 @@
 
 ## About The Project
 
-An overview of documentation about the applications in the Syntho Engine and all the architectural decision records are contained within this repository. The Syntho Engine Docs can be found under `/docs`  and the architectural decision records can be found within `/architecture`.
+An overview of documentation about the applications in the Syntho Engine and its deployment are contained within this repository. The Syntho Engine Docs can be found under `/docs`.
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
