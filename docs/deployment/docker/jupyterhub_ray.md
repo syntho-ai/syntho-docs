@@ -124,6 +124,8 @@ available_node_types:
                 #     maxPrice: -1
 ```
 
+The Syntho Support can help for deciding what the optimal cluster configuration should be. Please request an initial cluster configuration based on the data requirements with them.
+
 In this case, we have set the node configuration for Azure instances. The head node uses 1 Standard_D4s_v3 instance with a pre-configured Ubuntu 18.04 image. This image has Docker pre-installed.
 
 For the workers, we have set the default amount of workers to be 2 (`available_node_types.ray_worker_default.min_workers`). In case that the resources are being over-used, this configuration will auto-scale up to 3 workers (`available_node_types.ray_worker_default.max_workers`). To keep costs lower, we used spot instances (`available_node_types.ray_worker_default.node_config.azure_arm_parameters.priority`).
@@ -226,6 +228,8 @@ c.AzureAdOAuthenticator.client_id = '{AAD-APP-CLIENT-ID}'
 c.AzureAdOAuthenticator.client_secret = '{AAD-APP-CLIENT-SECRET}'
 ```
 
+For more help on setting the Authentication method, please contact the Syntho Support.
+
 #### Deploy using docker-compose - JupyterHub
 
 Once the configuration is done, we can run the containers in detached mode using the following command:
@@ -279,7 +283,7 @@ This should create the worker and connect it to the head node. If any issues ari
 
 ## Testing the application
 
-Once both Ray and JupyterHub have been installed, login into the application in `http://<ip-address-or-dns-of-jupyterhub>/hub`. Once an environment has been created, a simple test to check whether Ray installed correctly and is accessible for JupyterHub, is to run the following command in a `Python Notebook`:
+Once both Ray and JupyterHub have been installed using either Option 1 or Option 2, login into the JupyterHub application in `http://<ip-address-or-dns-of-jupyterhub>/hub`. Logging in will trigger the creation of an environment. Once an environment is created, a simple test to check whether Ray installed correctly and is accessible for JupyterHub, is to run the following command in a `Python Notebook`:
 
 ```[python]
 import ray
@@ -291,4 +295,10 @@ This will connect to the Ray cluster and will return something like this:
 
 ```[sh]
 ClientContext(dashboard_url='10.244.1.21:8265', python_version='3.9.5', ray_version='1.12.1', ray_commit='4863e33856b54ccf8add5cbe75e41558850a1b75', protocol_version='2022-03-16', _num_clients=1, _context_to_restore=<ray.util.client._ClientContext object at 0x7f6c24257b50>)
+```
+
+To check whether all workers are connected probably, we can print the worker information from this notebook with the following code:
+
+```[python]
+print(ray.nodes())
 ```

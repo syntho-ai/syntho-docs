@@ -6,6 +6,7 @@ To install the Syntho Application, the following requirements need to be met:
 
 - Have a running Kubernetes cluster available/
   - Self managed, Azure Kubernetes Services (AKS), Amazon Elastic Kubernetes Service (EKS), or other Kubernetes (managed) solutions running Kubernetes 1.20 or higher.
+  - The instances should preferably have SSD storage.
 - kubectl installed.
   - For managing the Kubernetes cluster
 - Helm v3 installed.
