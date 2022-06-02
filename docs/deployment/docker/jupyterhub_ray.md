@@ -28,7 +28,7 @@ To install the Syntho Application together with JupyterHub & Ray, the following 
 
 To prepare this deployment, please download the configuration files provided by Syntho for this particular deployment setup. If option 1 was selected, a Ray configuration file using the YAML format will be provided. We will go over the changes necessary to configure this configuration file correctly.
 
-Please also request access to the Docker images for JupyterHub & Ray. These images will have all the necessary software installed to run the Syntho application correctly. We will need to log into the registry on all VM instances.
+Please also request access to the Docker images for JupyterHub & Ray. These images will have all the necessary software installed to run the Syntho application correctly. All of the VM instances need to log into the registry using `docker login`, see the section [Login into container registry](#login-into-container-registry)
 
 The images necessary for this deployment for both:
 
