@@ -1,5 +1,0 @@
-project:
-  name: Syntho
-  tz: Europe/Berlin
-  adrFolder: ./architecture/decisions
-  packages: []
