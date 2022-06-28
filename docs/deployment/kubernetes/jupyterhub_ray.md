@@ -70,7 +70,7 @@ Please read through the remaining sections to configure JupyterHub and Ray corre
 
 Depending on the received credentials from Syntho, a Kubernetes `Secret` should be created to pull the latest image from our docker registry. Please read more about creating `Secrets` [here](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/).
 
-We will assume that a secret named `syntho-cr-secret` has been created at this point. Please contact the Syntho Support for your credentials.
+We will assume that a secret named `syntho-cr-secret` has been created at this point. Please contact the Syntho Support Team for your credentials.
 
 ### JupyterHub
 
@@ -83,7 +83,7 @@ The image for Syntho should be set under `singleuser.image.name` and `singleuser
 ```[yaml]
 singleuser:
   image:
-    name: synthoregistry.azurecr.io/syntho-jupyterhub
+    name: <name-of-registry>/syntho-jupyterhub
     tag: 0.2.13
     pullPolicy:
     pullSecrets: ["<your-secret-name>"]
@@ -182,7 +182,7 @@ helm upgrade --cleanup-on-fail \
   --values values.yaml
 ```
 
-If any issues arise during this step, please contact the Syntho Support.
+If any issues arise during this step, please contact the Syntho Support Team.
 
 #### Upgrading JupyterHyb Syntho
 
@@ -241,7 +241,7 @@ rayWorkerType2:
     GPU: 0
 ```
 
-If autoscaling is enabled in Kubernetes, new nodes will be created once the Ray requirements are higher than the available resources. Please discuss with together with the Syntho Support which situation would fit your data requirements.
+If autoscaling is enabled in Kubernetes, new nodes will be created once the Ray requirements are higher than the available resources. Please discuss with together with the Syntho Support Team which situation would fit your data requirements.
 
 #### Deploy using Helm - Ray
 

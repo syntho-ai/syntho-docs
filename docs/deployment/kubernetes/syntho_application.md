@@ -20,7 +20,7 @@ To install the Syntho Application, the following requirements need to be met:
 
 ## Preparations
 
-The Syntho Application Helm chart can be requested from the Syntho Support. This chart can be used deploy the Syntho Application. Please also request access to the Docker images necessary for this deployment. These images will have all the necessary software installed to run the Syntho application correctly. We will set the credentials for pulling them in Kubernetes using `ImagePullSecrets` later.
+The Syntho Application Helm chart can be requested from the Syntho Support Team. This chart can be used deploy the Syntho Application. Please also request access to the Docker images necessary for this deployment. These images will have all the necessary software installed to run the Syntho application correctly. We will set the credentials for pulling them in Kubernetes using `ImagePullSecrets` later.
 
 The images necessary for this deployment:
 
@@ -48,7 +48,7 @@ The remaining sections will be focused on configuration the Helm chart for your 
 
 Depending on the received credentials from Syntho, a Kubernetes `Secret` should be created to use to pull the latest image from our docker registry. Please read more about creating `Secrets` [here](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/).
 
-We will assume that a secret named `syntho-cr-secret` has been created at this point. Please contact the Syntho Support for your credentials.
+We will assume that a secret named `syntho-cr-secret` has been created at this point. Please contact the Syntho Support Team for your credentials.
 
 ### Configuring the UI
 

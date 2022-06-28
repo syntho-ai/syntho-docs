@@ -23,9 +23,9 @@
   <p align="center">
     General repository for saving Syntho documentation in Markdown
     <br />
-    <a href="docs/deployment/docker"><strong>Explore the docker-compose deployment documentation »</strong></a>
+    <a href="https://github.com/syntho-ai/syntho-docs/tree/master/docs/deployment/docker"><strong>Explore the docker-compose deployment documentation »</strong></a>
     <br />
-    <a href="docs/deployment/kubernetes"><strong>Explore the Kubernetes deployment documentation »</strong></a>
+    <a href="https://github.com/syntho-ai/syntho-docs/tree/master/docs/deployment/kubernetes"><strong>Explore the Kubernetes deployment documentation »</strong></a>
     <br />
     <br />
   </p>

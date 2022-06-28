@@ -23,6 +23,11 @@ To install the Syntho Application together with JupyterHub & Ray, the following 
 - Internal networking between 3 VM instances.
 - [Optional] DNS zone and record for JupyterHub.
   - Example: syntho.company.com be used for hosting the interface of JupyterHub.
+- Docker images
+  - Either by having access to the container registry.
+  - or loading them in manually using `docker load` after receiving the docker images in .tar.gz format.
+- Configuration files
+  - The Syntho Support Team will provide the required files depending on the chosen deployment option.
 
 ## Preparations
 
@@ -41,13 +46,13 @@ The images necessary for this deployment for both:
 
 ### Login into container registry
 
-On each of the VM instances, we need to login into the registry to access the Syntho docker images. Please request your credentials with the Syntho Support. Once the credentials have been received, the following command can be used in each VM instance to login into the registry:
+On each of the VM instances, we need to login into the registry to access the Syntho docker images. Please request your credentials with the Syntho Support Team. Once the credentials have been received, the following command can be used in each VM instance to login into the registry:
 
 ```[sh]
 docker login <registry> -u <username>
 ```
 
-The registry, username and password will be provided by the Syntho Support.
+The registry, username and password will be provided by the Syntho Support Team.
 
 ## Deployment using Ray cluster manager (Option 1)
 
@@ -124,7 +129,7 @@ available_node_types:
                 #     maxPrice: -1
 ```
 
-The Syntho Support can help for deciding what the optimal cluster configuration should be. Please request an initial cluster configuration based on the data requirements with them.
+The Syntho Support Team can help for deciding what the optimal cluster configuration should be. Please request an initial cluster configuration based on the data requirements with them.
 
 In this case, we have set the node configuration for Azure instances. The head node uses 1 Standard_D4s_v3 instance with a pre-configured Ubuntu 18.04 image. This image has Docker pre-installed.
 
@@ -184,7 +189,6 @@ In the environment variables, we need to set the following variable to use the c
 
 ```[sh]
 DOCKER_NOTEBOOK_IMAGE=<registry>/syntho-jupyter:latest
-LOCAL_NOTEBOOK_IMAGE=<registry>/syntho-jupyter:latest
 ```
 
 This will create a Docker environment for every user that logs in, using the syntho-jupyter image. 
@@ -222,7 +226,7 @@ c.AzureAdOAuthenticator.client_id = '{AAD-APP-CLIENT-ID}'
 c.AzureAdOAuthenticator.client_secret = '{AAD-APP-CLIENT-SECRET}'
 ```
 
-For more help on setting the Authentication method, please contact the Syntho Support.
+The preferred method of authentication could differ of course. For more help on setting the Authentication method, please contact the Syntho Support Team.
 
 #### Deploy using docker-compose - JupyterHub
 
@@ -232,7 +236,7 @@ Once the configuration is done, we can run the containers in detached mode using
 docker-compose up -d
 ```
 
-If any issues arise during this step, please contact the Syntho Support.
+If any issues arise during this step, please contact the Syntho Support Team.
 
 ## Deployment using manual Ray cluster (Option 2)
 
@@ -259,7 +263,7 @@ This IP address should be the private IP from within the created network. We wil
 
 ### Creating the worker nodes
 
-On the VM instances that are assigned as the workers, we need to use the file `docker-compose-worker.yaml` to run the worker. Also make sure that `docker login` has been run on this machine, so that we have access to the registry containing the container.
+On the VM instances that are assigned as the workers, we need to use the file `docker-compose-worker.yaml` in the folder `docker-compose/ray` to run the worker. Also make sure that `docker login` has been run on this machine, so that we have access to the registry containing the container.
 
 First we need to add the environment variable with the head node IP. Please create the file `.env` and add:
 
@@ -285,7 +289,7 @@ import ray
 ray.init("ray://<ip-or-hostname-of-ray-cluster-head>:10001")
 ```
 
-This will connect to the Ray cluster and will return something like this:
+Please change `<ip-or-hostname-of-ray-cluster-head>` into the IP or Hostname of the Ray Head instance. This will connect to the Ray cluster and will return something like this:
 
 ```[sh]
 ClientContext(dashboard_url='10.244.1.21:8265', python_version='3.9.5', ray_version='1.12.1', ray_commit='4863e33856b54ccf8add5cbe75e41558850a1b75', protocol_version='2022-03-16', _num_clients=1, _context_to_restore=<ray.util.client._ClientContext object at 0x7f6c24257b50>)
@@ -296,3 +300,5 @@ To check whether all workers are connected probably, we can print the worker inf
 ```[python]
 print(ray.nodes())
 ```
+
+This will print out a list of dictionaries with information about each node in the cluster.
