@@ -135,7 +135,7 @@ In this case, we have set the node configuration for Azure instances. The head n
 
 For the workers, we have set the default amount of workers to be 2 (`available_node_types.ray_worker_default.min_workers`). In case that the resources are being over-used, this configuration will auto-scale up to 3 workers (`available_node_types.ray_worker_default.max_workers`). To keep costs lower, we used spot instances (`available_node_types.ray_worker_default.node_config.azure_arm_parameters.priority`).
 
-We also need to set the amount of workers on `max_workers`, which represents the amount of workers that can be spawned (not counting the head node). 
+We also need to set the amount of workers on `max_workers`, which represents the amount of workers that can be spawned (not counting the head node).
 
 We can adjust the amount of workers Ray will spawn by adjusting the `resources` parameter. For now we have set this value to be the same as the amount of CPUs available for the given instances.
 
@@ -244,7 +244,7 @@ The deployment of Option 1 overlaps with Option 2 when it comes to deploying Jup
 
 ### Creating the head node
 
-On the VM instance that is designated to run as the head node, make sure that Docker is installed and the `docker login` has been executed with the supplied credentials for the container registry. In the folder `docker-compose/ray`, copy the file `docker-compose-head.yaml` to the head node instance.
+On the VM instance that is designated to run as the head node, make sure that Docker is installed and the `docker login` has been executed with the supplied credentials for the container registry. In the folder `docker-compose/ray/option-2`, copy the file `docker-compose-head.yaml` to the head node instance.
 
 No configuration needs to be adjusted for this, we can now simply run:
 
@@ -263,7 +263,7 @@ This IP address should be the private IP from within the created network. We wil
 
 ### Creating the worker nodes
 
-On the VM instances that are assigned as the workers, we need to use the file `docker-compose-worker.yaml` in the folder `docker-compose/ray` to run the worker. Also make sure that `docker login` has been run on this machine, so that we have access to the registry containing the container.
+On the VM instances that are assigned as the workers, we need to use the file `docker-compose-worker.yaml` in the folder `docker-compose/ray/option-2` to run the worker. Also make sure that `docker login` has been run on this machine, so that we have access to the registry containing the container.
 
 First we need to add the environment variable with the head node IP. Please create the file `.env` and add:
 
