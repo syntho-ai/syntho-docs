@@ -1,5 +1,15 @@
 # Deployment instructions for JupyterHub/Ray Syntho with Docker
 
+## Table of Contents
+
+1. [Introduction](#introduction)
+2. [Requirements](#requirements)
+3. [Preparations](#preparations)
+4. [Deployment using Ray cluster manager (Option 1)](#deployment-using-ray-cluster-manager-option-1)
+5. [Deployment using Ray cluster manager (Option 2)](#deployment-using-ray-cluster-manager-option-2)
+6. [Testing the application](#testing-the-application)
+7. [Upgrading the application](#upgrading-the-application)
+
 ## Introduction
 
 To use the Syntho Application for this specific deployment option, we need to install both Ray and JupyterHub as part of this Syntho Application. JupyterHub will be used as the interface running Python Notebooks that run our Syntho Application on the Ray cluster. Deploying the Syntho Application with this JupyterHub/Ray solution using Docker can be done a few ways:
@@ -302,3 +312,79 @@ print(ray.nodes())
 ```
 
 This will print out a list of dictionaries with information about each node in the cluster.
+
+## Upgrading the application
+
+In cases of upgrades, we can provide the latest version of the application using our container registry or by providing the docker image as a file. Please contact the Syntho Support Team for more information.
+
+### Upgrade requirements
+
+Please make sure that the latest version of the docker image is pulled or downloaded and saved using the `docker load` command. The following images a eligible for updates:
+
+- `syntho-ray`
+- `syntho-jupyterhub`
+
+### JupyterHub
+
+In both options, we will have provided a JupyterHub docker-compose template in which we can change the image version. Please make sure the correct image is either loaded in using `docker load` or already pulled using `docker pull`. The following command will pull the latest version of the image using the container registry:
+
+```[sh]
+docker pull synthoregistry.azurecr.io/syntho-jupyterhub:<latest-image-version>
+```
+
+In case the image is not accessible via the container registry, the Syntho Support Team will provide an updated image in `.tar.gz` file. As stated in the [introduction](../introduction.md), we can use the following command to load the image:
+
+```[sh]
+docker load < syntho-image.tar.gz
+# OR
+docker load --input syntho-image.tar.g
+```
+
+In the folder `docker-compose/jupyterhub`, we can now change the image version in the `.env` file to the latest version:
+
+```[sh]
+DOCKER_NOTEBOOK_IMAGE=synthoregistry.azurecr.io/syntho-jupyterhub:<latest-image-version>
+```
+
+Afterwards we can then upgrade the docker-compose instance by running the following command:
+
+```[sh]
+docker-compose restart
+```
+
+### Ray
+
+For option 1, we can change the image version in the `configuration.yaml` file under the following part of the YAML file:
+
+```[yaml]
+docker:
+    image: "synthoregistry.azurecr.io/syntho-ray:latest" 
+```
+
+We can then upgrade the cluster using the following command:
+
+```[sh]
+ray up configuration.yaml
+```
+
+For option 2, we will have provided a Ray docker-compose template in which we can change the image version. Please make sure the correct image is either loaded in using `docker load` or already pulled using `docker pull`. We can change the following part of the `docker-compose-head.yaml` file. For the head node, we will change the image version to the latest version:
+
+```[yaml]
+services:
+    ray-head:
+        image: "synthoregistry.azurecr.io/syntho-ray:<latest-image-version>"
+```
+
+For each worker, we can adjust the `docker-compose-worker.yaml` file to change the image version like this:
+
+```[yaml]
+services:
+    ray-worker:
+        image: "synthoregistry.azurecr.io/syntho-ray:<latest-image-version>"
+```
+
+On each node, run the following command after upgrading the image version:
+
+```[sh]
+docker-compose up -d
+```
