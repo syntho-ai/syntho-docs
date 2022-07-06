@@ -27,11 +27,14 @@ To install the Syntho Application together with JupyterHub & Ray, the following 
   - OS: Ubuntu 18.04 or higher.
   - Preferably with SSD storage.
   - Docker 1.13.0+ ​installed.
+    - Please see the [official docker documentation](https://docs.docker.com/engine/install/) for the installation instructions.
   - `docker-compose` 2.x.x  installed.
+    - Please see the [official docker-compose documentation](https://docs.docker.com/compose/install/) for the installation instructions.
   - `docker-compose` file version will be v3.
-- One available IP address for the JupyterHub instance.
+- Reachable IP address and outbound port defined for JupyterHub instance (by default this is port 8080).
 - Internal networking between 3 VM instances.
 - [Optional] DNS zone and record for JupyterHub.
+  - A reverse proxy should be setup for the JupyterHub instance in this case.
   - Example: syntho.company.com be used for hosting the interface of JupyterHub.
 - Docker images
   - Either by having access to the container registry.
@@ -250,7 +253,7 @@ If any issues arise during this step, please contact the Syntho Support Team.
 
 ## Deployment using manual Ray cluster (Option 2)
 
-The deployment of Option 1 overlaps with Option 2 when it comes to deploying JupyterHub. Please refer to section [Setting up JupyterHub](#setting-up-jupyterhub) for the instructions on how to deploy JupyterHub. We will use the remaining VM instances to run certain Docker commands on to create the head node and the corresponding worker nodes. Please make sure that they are part of the same network, so that we can reach the other machines on most ports.
+The deployment of Option 1 overlaps with Option 2 when it comes to deploying JupyterHub. **Please refer to section [Setting up JupyterHub](#setting-up-jupyterhub) for the instructions on how to deploy JupyterHub.** We will use the remaining VM instances to run certain Docker commands on to create the head node and the corresponding worker nodes. Please make sure that they are part of the same network, so that we can reach the other machines on most ports.
 
 ### Creating the head node
 
