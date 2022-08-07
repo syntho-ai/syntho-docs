@@ -6,6 +6,7 @@
 2. [Requirements](#requirements)
 3. [Preparations](#preparations)
 4. [The Syntho Application deployment](#the-syntho-application-deployment)
+5. [Running the application](#running-the-application)
 
 ## Introduction
 
