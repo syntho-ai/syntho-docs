@@ -124,6 +124,57 @@ backend:
     tag: latest
 ```
 
+We then need to set the database credentials and Redis credentials. In the case that the instances defined in the Helm chart themselves are being used, no changes are needed there. Otherwise the following need to be changed:
+
+```[yaml]
+backend:
+  database:
+    host: <hostname>
+    port: <port>
+    username: <username>
+    password: <password>
+    database: <database>
+  redis:
+    host: <hostname>
+    port: <port>
+    db: <db_index>
+```
+
+If a hostname is available, we recommend setting the ingress for it as well. The process here is similar to setting it for the UI. See:
+
+```[yaml]
+backend:
+  ingress:
+    enabled: true
+    name: backend-ingress
+    className: nginx  # Set to class name of ingress controller
+    annotations: {
+      cert-manager.io/cluster-issuer: "",  # Set to issuer defined if using cert-maanger for SSL
+      nginx.ingress.kubernetes.io/proxy-buffer-size: "32k",
+      nginx.ingress.kubernetes.io/affinity: "cookie",
+      nginx.ingress.kubernetes.io/rewrite-target: /,
+      nginx.ingress.kubernetes.io/proxy-connect-timeout: "600",
+      nginx.ingress.kubernetes.io/proxy-read-timeout: "600",
+      nginx.ingress.kubernetes.io/proxy-send-timeout: "600",
+      nginx.ingress.kubernetes.io/proxy-body-size: "512m"
+    }
+    hosts:
+      - host: <hostname>
+        paths:
+          - path: /
+            pathType: Prefix
+    tls:
+      - hosts:
+        - <hostname>
+        secretName: backend-tls
+```
+
+Lastly we need to set an additional variable, as defined in the block below:
+
+```[yaml]
+secret_key: (^ky&f)l&$3sqf2tctv-(pgzvh!+9$j%b5xe2y@&%p2ay*h$$a  # Random string to use as a secret key
+```
+
 ### Configuring the Core API
 
 To configure the Core API, we will need to first set the correct image. To set the image we will use the `image` field in the `core` section.
