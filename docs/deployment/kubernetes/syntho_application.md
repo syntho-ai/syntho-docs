@@ -7,7 +7,7 @@ To install the Syntho Application, the following requirements need to be met:
 - Have a running Kubernetes cluster available/
   - Self managed, Azure Kubernetes Services (AKS), Amazon Elastic Kubernetes Service (EKS), or other Kubernetes (managed) solutions running Kubernetes 1.20 or higher.
   - The instances should preferably have SSD storage.
-- kubectl installed.
+- `kubectl` installed.
   - For managing the Kubernetes cluster
 - Helm v3 installed.
   - See instructions on how to install Helm [here](https://helm.sh/docs/intro/install/).
@@ -33,6 +33,9 @@ The images necessary for this deployment:
 - syntho-backend
   - Version: latest
   - The Syntho Backend is responsible for user management and workspace management.
+- syntho-ray
+  - Version: latest
+  - Has the latest Ray version installed that is compatible with the Syntho Application.
 
 ## Deployment using Helm
 
@@ -50,8 +53,107 @@ Depending on the received credentials from Syntho, a Kubernetes `Secret` should 
 
 We will assume that a secret named `syntho-cr-secret` has been created at this point. Please contact the Syntho Support Team for your credentials.
 
+In the Helm chart, we can set the secret under the `imagePullSecrets` section.
+
+```[bash]
+imagePullSecrets: 
+  - name: syntho-cr-secret
+```
+
 ### Configuring the UI
+
+For the UI, we will need to set the image repository and tag first:
+
+```[yaml]
+image:
+  repository: synthoregistry.azurecr.io/syntho-core-frontend
+  tag: latest
+```
+
+We will also need to set the domain name for the UI.
+
+```[yaml]
+frontend_url: <hostname-or-ip>
+frontend_protocol: https # http or https depending on the availability of an SSL certificate
+```
+
+If a DNS hostname is available, we can set the ingress configuration as follows for the UI:
+
+```[yaml]
+ingress:
+    enabled: true
+    name: frontend-ingress
+    className: nginx  # Set to classname of the ingress controller you are using
+    annotations: {
+      cert-manager.io/cluster-issuer: "", # In case cert-manager is used for SSL
+      nginx.ingress.kubernetes.io/proxy-buffer-size: "32k",
+      nginx.ingress.kubernetes.io/affinity: "cookie",
+      nginx.ingress.kubernetes.io/rewrite-target: /,
+      nginx.ingress.kubernetes.io/proxy-connect-timeout: "600",
+      nginx.ingress.kubernetes.io/proxy-read-timeout: "600",
+      nginx.ingress.kubernetes.io/proxy-send-timeout: "600",
+      nginx.ingress.kubernetes.io/proxy-body-size: "512m",
+    }
+    hosts:
+      - host: <hostname>
+        paths:
+          - path: /
+            pathType: Prefix
+    
+    tls:  # In case SSL is not used, the tls section can be removed
+      - hosts:
+        - <hostname>
+        secretName: frontend-tls
+```
+
+If no ingress is needed, it can be disabled by setting:
+
+```[yaml]
+ingress:
+    enabled: false
+```
 
 ### Configuring the Backend
 
+The backend is responsible for user management and workspace management. We need to set a few variables correctly. To start off, we need to set the image:
+
+```[yaml]
+backend:
+  image:
+    repository: synthoregistry.azurecr.io/syntho-core-backend
+    tag: latest
+```
+
 ### Configuring the Core API
+
+To configure the Core API, we will need to first set the correct image. To set the image we will use the `image` field in the `core` section.
+
+```[bash]
+image:
+  repository: synthoregistry.azurecr.io/syntho-core-api
+  tag: latest
+```
+
+Furthermore, we need to set database hostname and credentials:
+
+```[bash]
+db:
+    username: <database-username>
+    password: <database-password>
+    name: <database-name>
+    host: <database-host>
+```
+
+The deployment can possibly create the database already, in which case the credentials do not need to be set.
+
+Lastly we need to set a secret key for encryption purposes, the credentials for a Redis instance and the Ray head IP or hostname to connect to.
+
+```[sh]
+secret_key: UNIbrRR0CnhPEB0BXKQSDASaNzT1IYgQWWaLyQ1W1iPg= # Fernet Key
+redis_host: redis://<redis-hostname-or-ip>:<port>/<redis_db_index>
+ray_address: <ray-head-ip-or-hostname>
+```
+
+## Deployment of Ray using Helm
+
+## Testing the deployment
