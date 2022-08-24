@@ -4,7 +4,7 @@
 
 To install the Syntho Application, the following requirements need to be met:
 
-- Have a running Kubernetes cluster available/
+- Have a running Kubernetes cluster available
   - Self managed, Azure Kubernetes Services (AKS), Amazon Elastic Kubernetes Service (EKS), or other Kubernetes (managed) solutions running Kubernetes 1.20 or higher.
   - The instances should preferably have SSD storage.
 - `kubectl` installed.
@@ -197,7 +197,7 @@ db:
 
 The deployment can possibly create the database already, in which case the credentials do not need to be set.
 
-Lastly we need to set a secret key for encryption purposes, the credentials for a Redis instance and the Ray head IP or hostname to connect to.
+Lastly we need to set a secret key for encryption purposes, the credentials for a Redis instance and the Ray head IP or hostname to connect to. We will acquire the hostname later in the process by going through the steps of the section [Deployment of Ray using Helm](#deployment-of-ray-using-helm). 
 
 ```[sh]
 secret_key: UNIbrRR0CnhPEB0BXKQSDASaNzT1IYgQWWaLyQ1W1iPg= # Fernet Key
@@ -207,4 +207,62 @@ ray_address: <ray-head-ip-or-hostname>
 
 ## Deployment of Ray using Helm
 
+To power the ML models, we will need to deploy a Ray cluster using Helm for the Core API to connect to. The chart to deploy Ray will be provided by the Syntho team.
+
+### Setting the image
+
+In the values.yaml file in `helm/ray`, set the following fields to ensure the usage of the correct Docker image:
+
+```[yaml]
+operatorImage: <name-of-registry>/syntho-ray:<image-tag>
+image: <name-of-registry>/syntho-ray:<image-tag>
+```
+
+`<name-of-registry>` and `<image-tag>` will be provided by Syntho for your deployment.
+
+Next to setting the correct Docker image, define the Kubernetes `Secret` that is created under `imagePullSecrets`:
+
+```[yaml]
+imagePullSecrets: 
+    - name: syntho-cr-secret
+```
+
+### Workers and nodes
+
+Depending on the size and amount of nodes of the cluster, adjust the amount of workers that Ray has available for tasks. Under `podTypes.rayHeadType` we can set the resources for the head node, which we recommend to keep as is in the provided file. This head node will mostly be used for administrative tasks in Ray and the worker nodes will be picking up most of the tasks for the Syntho Application.
+
+We recommend two pools of workers, where the first pool has a higher amount of memory, but a low amount of workers and the second pool with reverse conditions. Depending on the CPUs and Memory available in the node, the amount of CPUs and Memory can be set. An example of a cluster with two node pools, of 1 machine (autoscaling up to 3), with 16 CPUs and 64GB of RAM and another of 1 machine (autoscaling up to 3) with 8 CPUs and 32GB of RAM:
+
+```[yaml]
+rayWorkerType:
+    # minWorkers is the minimum number of Ray workers of this pod type to keep running.
+    minWorkers: 1
+    # maxWorkers is the maximum number of Ray workers of this pod type to which Ray will scale.
+    maxWorkers: 3
+    memory: 50Gi
+    CPU: 5
+    GPU: 0
+
+rayWorkerType2:
+    minWorkers: 3
+    maxWorkers: 5
+    memory: 8Gi
+    CPU: 2
+    GPU: 0
+```
+
+If autoscaling is enabled in Kubernetes, new nodes will be created once the Ray requirements are higher than the available resources. Please discuss with together with the Syntho Team which situation would fit your data requirements.
+
+### Deploy using Helm - Ray
+
+Once the values have been set correctly in `values.yaml` under `helm/ray`, we can deploy the application to the cluster using the following command:
+
+```[sh]
+helm upgrade --cleanup-on-fail ray-cluster ./helm/ray --values values.yaml --namespace syntho 
+```
+
+Once deployed, we can find the service name in Kubernetes for the Ray application. In the case of using the name `ray-cluster` as is the case in the command above, the service name (and hostname to use in the variable `ray_address` for the Core API values section) is `ray-cluster-ray-head`.
+
 ## Testing the deployment
+
+Once both Helm charts are deployed, the application should be reachable on the defined url of the frontend. To test this, we can simply open a browser and navigate to the url.
