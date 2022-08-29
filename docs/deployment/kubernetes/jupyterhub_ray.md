@@ -45,6 +45,8 @@ The structure of these files will look as follows:
 
 Please also request access to the Docker images for JupyterHub & Ray. These images will have all the necessary software installed to run the Syntho application correctly. The credentials are set in Kubernetes using `ImagePullSecrets` later.
 
+In this setup, the JupyterHub Helm chart will need to be pulled from https://jupyterhub.github.io/helm-chart/. Please make sure that accessing this URL is possible. If that's not the case, a zip file can be provided with the Helm chart as well.
+
 The images necessary for this deployment:
 
 - syntho-ray
@@ -107,6 +109,8 @@ hub:
       authenticator_class: azuread
 ```
 
+Other methods are described in the documentation of JupyterHub. If any issues arise, please contact the Syntho Team.
+
 #### Application access
 
 Depending on the requirement for accessing the application, we can either select a `Loadbalancer` in Kubernetes to create a separate `Loadbalancer` that can be used for accessing the application. If that is the case, the following values should be set like this:
@@ -126,7 +130,7 @@ proxy:
     loadBalancerSourceRanges: []
 ```
 
-To use an `Ingress` of any kind in Kubernetes to be able to assign a DNS record, please configure your Ingress Controller (see overview of Ingress Controllers [here](https://kubernetes.io/docs/concepts/services-networking/ingress-controllers/)). We recommend the NGINX controller, which can additionally be installed using Helm (see [this link](https://docs.nginx.com/nginx-ingress-controller/installation/installation-with-helm/)).
+To use an `Ingress` of any kind in Kubernetes to be able to assign a DNS record, please configure your Ingress Controller (see overview of Ingress Controllers [here](https://kubernetes.io/docs/concepts/services-networking/ingress-controllers/)). We recommend the NGINX controller, which can additionally be installed using Helm (see [this link](https://docs.nginx.com/nginx-ingress-controller/installation/installation-with-helm/)), but other Ingress Controllers can be used as well. Please note that the ingress definition will need some changes to be able to use the Ingress Controller.
 
 In the case of using an ingress controller, please adjust the values of `proxy.service.type` as follows:
 
@@ -167,6 +171,8 @@ ingress:
   #  }
   #]
 ```
+
+If a different Ingress Controller was chosesn, please change the values for `kubernetes.io/ingress.class` and other annotations accordingly.
 
 #### Deploy using Helm - JupyterHub
 
@@ -221,7 +227,7 @@ imagePullSecrets:
 
 Depending on the size and amount of nodes of the cluster, adjust the amount of workers that Ray has available for tasks. Under `podTypes.rayHeadType` we can set the resources for the head node, which we recommend to keep as is in the provided file. This head node will mostly be used for administrative tasks in Ray and the worker nodes will be picking up most of the tasks for the Syntho Application.
 
-We recommend two pools of workers, where the first pool has a higher amount of memory, but a low amount of workers and the second pool with reverse conditions. Depending on the CPUs and Memory available in the node, the amount of CPUs and Memory can be set. An example of a cluster with two node pools, of 1 machine (autoscaling up to 3), with 16 CPUs and 64GB of RAM and another of 1 machine (autoscaling up to 3) with 8 CPUs and 32GB of RAM:
+Depending on the data requirements, different pools of workers can be defined. An example is two pools of workers, where the first pool has a higher amount of memory, but a low amount of workers and the second pool with reverse conditions. Depending on the CPUs and Memory available in the node, the amount of CPUs and Memory can be set. An example of a cluster with two node pools, of 1 machine (autoscaling up to 3), with 16 CPUs and 64GB of RAM and another of 1 machine (autoscaling up to 3) with 8 CPUs and 32GB of RAM:
 
 ```[yaml]
 rayWorkerType:
@@ -240,6 +246,8 @@ rayWorkerType2:
     CPU: 2
     GPU: 0
 ```
+
+Another case we can consider is the usage of only high memory workers, or even only a head worker with high memory. Depending on the data requirements, the Syntho Team can advise on a possible configuration. Please contact the Syntho Team if the need assistance arises.
 
 If autoscaling is enabled in Kubernetes, new nodes will be created once the Ray requirements are higher than the available resources. Please discuss with together with the Syntho Support Team which situation would fit your data requirements.
 
