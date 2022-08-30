@@ -43,7 +43,7 @@ The structure of these files will look as follows:
 │       └── values.yaml
 ```
 
-Please also request access to the Docker images for JupyterHub & Ray. These images will have all the necessary software installed to run the Syntho application correctly. The credentials are set in Kubernetes using `ImagePullSecrets` later.
+Please also request access to the Docker images for JupyterHub & Ray. These images will have all the necessary software installed to run the Syntho application correctly. The credentials are set in Kubernetes using `ImagePullSecrets` later. 
 
 In this setup, the JupyterHub Helm chart will need to be pulled from https://jupyterhub.github.io/helm-chart/. Please make sure that accessing this URL is possible. If that's not the case, a zip file can be provided with the Helm chart as well.
 
@@ -55,6 +55,8 @@ The images necessary for this deployment:
 - syntho-jupyterhub
   - Version: latest
   - Has the latest version of JupyterHub installed that is compatible with the Syntho Application.
+
+The images will also need a license key to activate the deployment. This will be provided by Syntho and the instructions of setting this correctly can be found later in this document. 
 
 ## Deployment using Helm
 
@@ -90,6 +92,18 @@ singleuser:
     pullPolicy:
     pullSecrets: ["<your-secret-name>"]
 ```
+
+#### License key - JupyterHub
+
+The license key can be set under `singleuser.extraEnv.LICENSE_KEY_SIGNED`. An example of this would be:
+
+```[yaml]
+singleuser:
+  extraEnv:
+    LICENSE_KEY_SIGNED: <syntho-license-key>
+```
+
+Please use the license key provided by Syntho.
 
 #### Authentication method
 
@@ -222,6 +236,16 @@ Next to setting the correct Docker image, define the Kubernetes `Secret` that is
 imagePullSecrets: 
     - name: syntho-cr-secret
 ```
+
+#### License key - Ray
+
+The license key can be set under `SynthoLicense` in the `values.yaml` file.. An example of this would be:
+
+```[yaml]
+SynthoLicense: <syntho-license-key>
+```
+
+Please use the license key provided by Syntho.
 
 #### Workers and nodes
 
