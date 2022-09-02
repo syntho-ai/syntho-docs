@@ -13,9 +13,9 @@
 To use the Syntho Application for this specific deployment option, we need to install both Ray and the Syntho Application as part of this Syntho Application. The Syntho Application will be used as the self-service interface for our application. Deploying the Syntho Application and Ray using Docker can be done a few ways:
 
 - Option 1: Depending on whether support for for autoscaling Ray workers is necessary, we can either deploy by using the Ray cluster manager directly in the following cloud providers: AWS, GCP, Azure.
-The Ray cluster manager will enable autoscaling based on a given configuration. We will then separately deploy a single instance running the Syntho Application using `docker-compose` in the same network as the Ray cluster. See section Deployment using Ray cluster manager in the [file for the JupyterHub & Ray deployment](./jupyterhub_ray.md) (Recommended)
+The Ray cluster manager will enable autoscaling based on a given configuration. We will then separately deploy a single instance running the Syntho Application using `docker-compose` in the same network as the Ray cluster. See section Deployment using Ray cluster manager in the [file for the JupyterHub & Ray deployment](./jupyterhub_ray.md#deployment-using-ray-cluster-manager-option-1) (Recommended)
 
-- Option 2: Deploying Ray instances manually using Docker. Autoscaling using Ray will not be available and the nodes need to be connected manually to the head node of Ray. The Syntho Application will still be deployed using `docker-compose`. See section Deployment using manual Ray cluster (Option 2) in the [file for the JupyterHub & Ray deployment](./jupyterhub_ray.md)
+- Option 2: Deploying Ray instances manually using Docker. Autoscaling using Ray will not be available and the nodes need to be connected manually to the head node of Ray. The Syntho Application will still be deployed using `docker-compose`. See section Deployment using manual Ray cluster (Option 2) in the [file for the JupyterHub & Ray deployment](./jupyterhub_ray.md#deployment-using-manual-ray-cluster-option-2)
 
 The Syntho Application itself will be installed using a docker-compose file together with the correct environment variables set. This document will continue to explain the installation of the Syntho Application and not Ray, see the [file for the JupyterHub & Ray deployment](./jupyterhub_ray.md) for more information on the Ray part of the deployment.
 
@@ -24,7 +24,7 @@ The Syntho Application itself will be installed using a docker-compose file toge
 To install the Syntho Application, the following requirements need to be met:
 
 - Have at least 3 VM instances running.
-  - OS: Ubuntu 18.04 or higher.
+  - OS: Any Linux OS capable of running docker & docker-compose.
   - Preferably with SSD storage.
   - Docker 1.13.0+ ​installed.
     - Please see the [official docker documentation](https://docs.docker.com/engine/install/) for the installation instructions.
@@ -55,7 +55,7 @@ The images necessary for this deployment for both Ray and the Syntho Application
 
 - syntho-ray
   - Version: latest
-  - Has the latest Ray version installed that is compatible with the Syntho Application. See the document [Jupyterhub & RAy deployment](./jupyterhub_ray.md) for more the deployment instructions.
+  - Has the latest Ray version installed that is compatible with the Syntho Application. See the document [Jupyterhub & Ray deployment](./jupyterhub_ray.md#deployment-using-manual-ray-cluster-option-2) for more the deployment instructions for Ray.
 - syntho-core-api
   - Version: latest
   - The Syntho Core API is responsible for the core operations of the Syntho Platform.
@@ -65,6 +65,16 @@ The images necessary for this deployment for both Ray and the Syntho Application
 - syntho-backend
   - Version: latest
   - The Syntho Backend is responsible for user management and workspace management.
+
+### Login into container registry
+
+On each of the VM instances, we need to login into the registry to access the Syntho docker images. Please request your credentials with the Syntho Support Team. Once the credentials have been received, the following command can be used in each VM instance to login into the registry:
+
+```[sh]
+docker login <registry> -u <username>
+```
+
+The registry, username and password will be provided by the Syntho Support Team.
 
 ## The Syntho Application deployment
 
@@ -163,6 +173,18 @@ BACKEND_REDIS_HOST=redis # Redis hostname to connect to
 BACKEND_REDIS_PORT=6379 # Redis port to connect to
 BACKEND_REDIS_DB_INDEX=1 # Redis database index to use
 ```
+
+#### Admin user credentials
+
+The backend will need to have an admin user to manage the users and workspaces. The credentials for this user can be set in the `.env` file. The following variables can be set:
+
+```[sh]
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=somepassword
+ADMIN_EMAIL=admin@company.com
+```
+
+These credentials can be used in the UI application to login.
 
 #### Additional environment variables
 
