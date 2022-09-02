@@ -131,7 +131,7 @@ If the Redis instance defined in the `docker-compose` file is used, then these c
 
 #### Ray
 
-To connect the Core API to a Ray instance, we need to set the variable `RAY_ADDRESS` in the `.env` file. This should be set to the IP address or hostname of the Ray head instance.
+To connect the Core API to a Ray instance, we need to set the variable `RAY_ADDRESS` in the `.env` file. This should be set to the IP address or hostname of the Ray head instance. This refers back to the [other document](./jupyterhub_ray.md), where we explain how to install Ray. At the end of those steps, the IP or hostname of the Ray head instance should be known.
 
 ```[sh]
 RAY_ADDRESS=<ray-head-ip-address>
