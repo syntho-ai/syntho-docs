@@ -99,6 +99,12 @@ BACKEND_PROTOCOL=http # The protocol for the backend application, http of https 
 FRONTEND_PROTOCOL=http  # The protocol for the frontend application, http of https depending on the availability of a secure connection.
 ```
 
+Lastly we will need to set the environment variable for the license key. This license key will be provided by the Syntho Team. Please set the following environment variable to the right value:
+
+```[sh]
+LICENSE_KEY=<license-key>
+```
+
 For more information, contact the Syntho Team.
 
 ### Configuring the Core API
