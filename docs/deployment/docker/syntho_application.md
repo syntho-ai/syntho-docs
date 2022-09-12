@@ -227,3 +227,13 @@ docker-compose up -d  # -d for detached mode
 ```
 
 The application will need a moment to fully spin up. Once the application is running, we can access the application by going to the following address `http(s)://<hostname-or-ip>:3000`.
+
+## Manually saving logs
+
+To create a copy of the last saved logs lines for this application, docker-compose can be used. To create a log file of the last saved lines in docker-compose, we can use the following command:
+
+```[sh]
+docker compose logs >> syntho_logs.log
+```
+
+This will create a log file with the name `syntho_logs.log` in the current directory.

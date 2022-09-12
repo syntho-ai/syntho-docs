@@ -188,6 +188,7 @@ Once the `configuration.yaml` has been setup correctly, we can use the following
 ```[sh]
 ray up configuration.yaml
 ```
+
 Remember the IP address of the Ray head node (or the hostname of the machine), so that we can use that later to connect to the cluster from JupyterHub.
 
 ### Setting up JupyterHub
@@ -391,3 +392,13 @@ On each node, run the following command after upgrading the image version:
 ```[sh]
 docker-compose up -d
 ```
+
+## Manually saving logs
+
+To create a copy of the last saved logs lines for this application, docker-compose can be used. To create a log file of the last saved lines in docker-compose, we can use the following command:
+
+```[sh]
+docker compose logs >> syntho_logs.log
+```
+
+This will create a log file with the name `syntho_logs.log` in the current directory.
