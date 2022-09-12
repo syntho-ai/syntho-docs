@@ -15,9 +15,9 @@
 To use the Syntho Application for this specific deployment option, we need to install both Ray and JupyterHub as part of this Syntho Application. JupyterHub will be used as the interface running Python Notebooks that run our Syntho Application on the Ray cluster. Deploying the Syntho Application with this JupyterHub/Ray solution using Docker can be done a few ways:
 
 - Option 1: Depending on whether support for for autoscaling Ray workers is necessary, we can either deploy by using the Ray cluster manager directly in the following cloud providers: AWS, GCP, Azure.
-The Ray cluster manager will enable autoscaling based on a given configuration. We will then separately deploy a single instance running JupyterHub using `docker-compose` in the same network as the Ray cluster. See section [Deployment using Ray cluster manager](#deployment-using-ray-cluster-manager-option-1) (Recommended)
+The Ray cluster manager will enable autoscaling based on a given configuration. We will then separately deploy a single instance running JupyterHub using `docker compose` in the same network as the Ray cluster. See section [Deployment using Ray cluster manager](#deployment-using-ray-cluster-manager-option-1) (Recommended)
 
-- Option 2: Deploying Ray instances manually using Docker. Autoscaling using Ray will not be available and the nodes need to be connected manually to the head node of Ray. JupyterHub will still be deployed using `docker-compose`. See section [Deployment using manual Ray cluster (Option 2)](#deployment-using-manual-ray-cluster-option-2)
+- Option 2: Deploying Ray instances manually using Docker. Autoscaling using Ray will not be available and the nodes need to be connected manually to the head node of Ray. JupyterHub will still be deployed using `docker compose`. See section [Deployment using manual Ray cluster (Option 2)](#deployment-using-manual-ray-cluster-option-2)
 
 ## Requirements
 
@@ -28,9 +28,9 @@ To install the Syntho Application together with JupyterHub & Ray, the following 
   - Preferably with SSD storage.
   - Docker 1.13.0+ ​installed.
     - Please see the [official docker documentation](https://docs.docker.com/engine/install/) for the installation instructions.
-  - `docker-compose` 2.x.x  installed.
-    - Please see the [official docker-compose documentation](https://docs.docker.com/compose/install/) for the installation instructions.
-  - `docker-compose` file version will be v3.
+  - `docker compose` 2.x.x  installed.
+    - Please see the [official docker compose documentation](https://docs.docker.com/compose/install/) for the installation instructions.
+  - `docker compose` file version will be v3.
 - Reachable IP address and outbound port defined for JupyterHub instance (by default this is port 8080).
 - Internal networking between 3 VM instances.
 - [Optional] DNS zone and record for JupyterHub.
@@ -193,9 +193,9 @@ Remember the IP address of the Ray head node (or the hostname of the machine), s
 
 ### Setting up JupyterHub
 
-We will be setting up JupyterHub using docker-compose in the dedicated instance for JupyterHub. The creation of the Ray cluster will have setup a virtual network that the Ray cluster nodes will use. It is important that the instance running JupyterHub is either added to or created in that network.
+We will be setting up JupyterHub using docker compose in the dedicated instance for JupyterHub. The creation of the Ray cluster will have setup a virtual network that the Ray cluster nodes will use. It is important that the instance running JupyterHub is either added to or created in that network.
 
-We will then configure the environment variables and the JupyterHub configuration file in the next steps for the folder containing the docker-compose file for JupyterHub.
+We will then configure the environment variables and the JupyterHub configuration file in the next steps for the folder containing the docker compose file for JupyterHub.
 
 #### Docker image
 
@@ -211,7 +211,7 @@ This will create a Docker environment for every user that logs in, using the syn
 
 Depending on how the application needs to be accessed, a simple IP address or DNS record can be used. Please remember the private or public IP address of the instance to assign it to a DNS record.
 
-If a DNS record (public or private) is used, it is recommended to setup HTTPS using SSL certificates. If there are certificates, they can be uploaded to the same directory as the docker-compose file. Next uncomment the following lines in `jupyterhub_config.py`:
+If a DNS record (public or private) is used, it is recommended to setup HTTPS using SSL certificates. If there are certificates, they can be uploaded to the same directory as the docker compose file. Next uncomment the following lines in `jupyterhub_config.py`:
 
 ```[python]
 #c.JupyterHub.ssl_key = os.environ['SSL_KEY']
@@ -247,7 +247,7 @@ The preferred method of authentication could differ of course. For more help on 
 Once the configuration is done, we can run the containers in detached mode using the following command:
 
 ```[sh]
-docker-compose up -d
+docker compose up -d
 ```
 
 If any issues arise during this step, please contact the Syntho Support Team.
@@ -263,10 +263,10 @@ On the VM instance that is designated to run as the head node, make sure that Do
 No configuration needs to be adjusted for this, we can now simply run:
 
 ```[sh]
-docker-compose up
+docker compose up
 ```
 
-Once the container is started, look into the logs by using `docker-compose logs` and note down the IP address found in this line:
+Once the container is started, look into the logs by using `docker compose logs` and note down the IP address found in this line:
 
 ```[sh]
 ray-head  | 2022-06-02 00:37:05,751     INFO scripts.py:744 -- To connect to this Ray runtime from another node, run
@@ -288,7 +288,7 @@ RAY_HEAD_IP=<ip-of-head-node>
 Once this `.env` file is created, we can simply run:
 
 ```[sh]
-docker-compose up
+docker compose up
 ```
 
 This should create the worker and connect it to the head node. If any issues arise, make sure that ports 6379 and 10001 are accessible on the head node for all workers.
@@ -330,7 +330,7 @@ Please make sure that the latest version of the docker image is pulled or downlo
 
 ### JupyterHub
 
-In both options, we will have provided a JupyterHub docker-compose template in which we can change the image version. Please make sure the correct image is either loaded in using `docker load` or already pulled using `docker pull`. The following command will pull the latest version of the image using the container registry:
+In both options, we will have provided a JupyterHub docker compose template in which we can change the image version. Please make sure the correct image is either loaded in using `docker load` or already pulled using `docker pull`. The following command will pull the latest version of the image using the container registry:
 
 ```[sh]
 docker pull synthoregistry.azurecr.io/syntho-jupyterhub:<latest-image-version>
@@ -350,10 +350,10 @@ In the folder `docker-compose/jupyterhub`, we can now change the image version i
 DOCKER_NOTEBOOK_IMAGE=synthoregistry.azurecr.io/syntho-jupyterhub:<latest-image-version>
 ```
 
-Afterwards we can then upgrade the docker-compose instance by running the following command:
+Afterwards we can then upgrade the docker compose instance by running the following command:
 
 ```[sh]
-docker-compose restart
+docker compose up -d
 ```
 
 ### Ray
@@ -371,7 +371,7 @@ We can then upgrade the cluster using the following command:
 ray up configuration.yaml
 ```
 
-For option 2, we will have provided a Ray docker-compose template in which we can change the image version. Please make sure the correct image is either loaded in using `docker load` or already pulled using `docker pull`. We can change the following part of the `docker-compose-head.yaml` file. For the head node, we will change the image version to the latest version:
+For option 2, we will have provided a Ray docker compose template in which we can change the image version. Please make sure the correct image is either loaded in using `docker load` or already pulled using `docker pull`. We can change the following part of the `docker-compose-head.yaml` file. For the head node, we will change the image version to the latest version:
 
 ```[yaml]
 services:
@@ -390,12 +390,12 @@ services:
 On each node, run the following command after upgrading the image version:
 
 ```[sh]
-docker-compose up -d
+docker compose up -d
 ```
 
 ## Manually saving logs
 
-To create a copy of the last saved logs lines for this application, docker-compose can be used. To create a log file of the last saved lines in docker-compose, we can use the following command:
+To create a copy of the last saved logs lines for this application, docker compose can be used. To create a log file of the last saved lines in docker compose, we can use the following command:
 
 ```[sh]
 docker compose logs >> syntho_logs.log
