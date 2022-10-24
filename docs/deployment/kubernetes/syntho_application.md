@@ -211,6 +211,15 @@ backend:
 
 The redis section can be set as is defined above, if the redis instance is being used from the Helm chart. The default behavior will deploy the redis instance defined in the chart. If a different redis instance is being used, the host and port need to be changed.
 
+The database section needs to be changed if a different database is being used. The default behavior will deploy the database instance defined in the chart. If a different database outside the Helm chart is being used, the host, port, user, password and database name need to be changed. To disable the usage and deployment of the database instance defined in the chart, the following can be set:
+
+```[yaml]
+backend:
+  database_enabled: false
+```
+
+If the database is being used from the Helm chart, the value `host` can be set to `database` and port to `5432`. The other values can be changed in case a different username, password or database name is preferred. This will automatically adjust the database instance defined in the Helm chart.
+
 If a hostname is available, we recommend setting the ingress for it as well. The process here is similar to setting it for the UI. See:
 
 ```[yaml]
