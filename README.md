@@ -19,7 +19,7 @@
 <!-- PROJECT LOGO -->
 <br />
 <div align="center">
-  <a href="https://github.com/github_username/repo_name">
+  <a href="https://github.com/syntho-ai/syntho-docs">
     <img src="https://www.syntho.ai/wp-content/uploads/2021/03/cropped-Syntho_logo_wide.png" alt="Logo" height="80">
   </a>
 
