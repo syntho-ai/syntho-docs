@@ -151,7 +151,7 @@ If a DNS hostname is available, we can set the ingress configuration as follows 
 ingress:
     enabled: true
     name: frontend-ingress
-    className: nginx  # Set to classname of the ingress controller you are using
+    className: nginx  # Set to class name of the ingress controller you are using
     annotations: {
       cert-manager.io/cluster-issuer: "", # In case cert-manager is used for SSL
       nginx.ingress.kubernetes.io/proxy-buffer-size: "32k",
@@ -229,7 +229,7 @@ backend:
     name: backend-ingress
     className: nginx  # Set to class name of ingress controller
     annotations: {
-      cert-manager.io/cluster-issuer: "",  # Set to issuer defined if using cert-maanger for SSL
+      cert-manager.io/cluster-issuer: "",  # Set to issuer defined if using cert-manager for SSL
       nginx.ingress.kubernetes.io/proxy-buffer-size: "32k",
       nginx.ingress.kubernetes.io/affinity: "cookie",
       nginx.ingress.kubernetes.io/rewrite-target: /,
