@@ -20,7 +20,14 @@ To install the Syntho Application, the following requirements need to be met:
 
 ## Preparations
 
-The Syntho Application Helm chart can be requested from the Syntho Support Team. This chart can be used deploy the Syntho Application. Please also request access to the Docker images necessary for this deployment. These images will have all the necessary software installed to run the Syntho application correctly. We will set the credentials for pulling them in Kubernetes using `ImagePullSecrets` later.
+The Syntho Application Helm chart can be found here: [Syntho Charts](https://github.com/syntho-ai/syntho-charts/tree/master/helm). This chart can be used deploy the Syntho Application. For this deployment, we will need the following charts in the folder `helm`:
+
+- syntho-ui
+  - Helm chart containing the web UI application and necessary API's
+- ray
+  - Helm chart for deploying the cluster to be used for parallelizing ML and heavy workloads
+
+Please request access to the Docker images necessary for this deployment. These images will have all the necessary software installed to run the Syntho application correctly. We will set the credentials for pulling them in Kubernetes using `ImagePullSecrets` later.
 
 The images necessary for this deployment:
 
@@ -47,9 +54,28 @@ kubectl create namespace syntho
 
 The remaining sections will be focused on configuration the Helm chart for your environment.
 
+### Setting up a Kubernetes Secret
+
+Depending on the received credentials from Syntho, a Kubernetes `Secret` should be created to use to pull the latest image from our docker registry. Please read more about creating `Secrets` [here](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/).
+
+We will assume that a secret named `syntho-cr-secret` has been created at this point. Please contact the Syntho Support Team for your credentials. An example of creating a secret for a docker registry via `kubectl` can be found below:
+
+```[bash]
+kubectl create secret docker-registry syntho-cr-secret --namespace syntho --docker-server=<registry> --docker-username=<username> --docker-password=<password>
+```
+
+In both the Helm charts for Ray and the Syntho application, we can set the secret under the `imagePullSecrets` section.
+
+```[bash]
+imagePullSecrets: 
+  - name: syntho-cr-secret
+```
+
 ## Deployment of Ray using Helm
 
-To power the ML models, we will need to deploy a Ray cluster using Helm for the Core API to connect to. The chart to deploy Ray will be provided by the Syntho team.
+To power the ML models, we will need to deploy a Ray cluster using Helm for the Core API to connect to. The chart can be found in the repository [here](https://github.com/syntho-ai/syntho-charts/tree/master/helm) or can be supplied by a repo url to be used in Helm directly. Please contact the Syntho team for this repo url.
+
+This part of the documentation will assume access to the folder `helm/ray` in the master branch of the aforementioned github repository.
 
 ### Setting the image
 
@@ -110,23 +136,16 @@ If autoscaling is enabled in Kubernetes, new nodes will be created once the Ray 
 Once the values have been set correctly in `values.yaml` under `helm/ray`, we can deploy the application to the cluster using the following command:
 
 ```[sh]
-helm upgrade --cleanup-on-fail ray-cluster ./helm/ray --values values.yaml --namespace syntho 
+helm install ray-cluster ./helm/ray --values values.yaml --namespace syntho 
 ```
 
 Once deployed, we can find the service name in Kubernetes for the Ray application. In the case of using the name `ray-cluster` as is the case in the command above, the service name (and hostname to use in the variable `ray_address` for the Core API values section) is `ray-cluster-ray-head`.
 
-### Setting up a Kubernetes Secret
+## Deployment of Syntho Application using Helm
 
-Depending on the received credentials from Syntho, a Kubernetes `Secret` should be created to use to pull the latest image from our docker registry. Please read more about creating `Secrets` [here](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/).
+To deploy the Syntho Application, we will use the Helm chart in the same repository as mentioned before `syntho-ai/syntho-charts`. The chart can be found in the folder `helm/syntho-ui`. The rest of this paragraph will assume access to the folder `helm/syntho-ui` in the master branch of the aforementioned github repository.
 
-We will assume that a secret named `syntho-cr-secret` has been created at this point. Please contact the Syntho Support Team for your credentials.
-
-In the Helm chart, we can set the secret under the `imagePullSecrets` section.
-
-```[bash]
-imagePullSecrets: 
-  - name: syntho-cr-secret
-```
+To configure the UI, the `values.yaml` file in `helm/syntho-ui` can be used. The following sections will describe the different fields that can be set.
 
 ### Configuring the UI
 
@@ -314,14 +333,16 @@ python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().d
 
 The redis instance can be set to `redis://redis-svc:6379/1` if the redis instance created by the Helm chart is being used, which is being deployed by default.
 
-## Deploy using Helm - Syntho Application
+### Deploy using Helm - Syntho Application
 
 To deploy the Syntho Application, we will use the Helm chart provided by the Syntho team. The chart can be found in the `helm/syntho` folder.
 
 ```[sh]
-helm upgrade --cleanup-on-fail syntho-ui ./helm/syntho-ui --values values.yaml --namespace syntho 
+helm install syntho-ui ./helm/syntho-ui --values values.yaml --namespace syntho 
 ```
 
 ## Testing the deployment
 
 Once both Helm charts are deployed, the application should be reachable on the defined url of the frontend. To test this, we can simply open a browser and navigate to the url of the frontend `frontend_url`. If the deployment was successful, we should see the login page of the Syntho application and should be able to login with the credentials of the admin user we defined in the `values.yaml` file.
+
+## Upgrading the applications
