@@ -346,3 +346,23 @@ helm install syntho-ui ./helm/syntho-ui --values values.yaml --namespace syntho
 Once both Helm charts are deployed, the application should be reachable on the defined url of the frontend. To test this, we can simply open a browser and navigate to the url of the frontend `frontend_url`. If the deployment was successful, we should see the login page of the Syntho application and should be able to login with the credentials of the admin user we defined in the `values.yaml` file.
 
 ## Upgrading the applications
+
+Depending on what types of the application can be upgraded, we either need to make changes in the Helm values file for the syntho-ui Helm chart or the Helm values file for the ray Helm chart. The following sections will describe the changes that need to be made for each type of upgrade.
+
+### Upgrading the Helm chart for Ray
+
+In most cases, the upgrading of the Ray chart will be necessary. For example, upgrading to a new version of Ray or upgrading the number of workers. After the necessary changes have been made to the `values.yaml` file, we can run the command to upgrade the Helm installation. To upgrade the Ray chart, we can simply run the following command:
+
+```[sh]
+helm upgrade --cleanup-on-fail ray-cluster ./helm/ray --values values.yaml --namespace syntho 
+```
+
+Note: in some cases an application in the Syntho UI Helm chart will need to be upgraded as well to successfully reflect the changes made in the Ray Helm chart. This will be described in the next section.
+
+### Upgrading the Helm chart for Syntho UI
+
+In some cases, the upgrading of the Syntho UI chart will be necessary. For example, upgrading to a new version of the Syntho UI or upgrading the number of workers. After the necessary changes have been made to the `values.yaml` file, we can run the command to upgrade the Helm installation. To upgrade the Syntho UI chart, we can simply run the following command:
+
+```[sh]
+helm upgrade --cleanup-on-fail syntho-ui ./helm/syntho-ui --values values.yaml --namespace syntho 
+```
