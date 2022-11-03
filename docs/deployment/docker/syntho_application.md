@@ -13,11 +13,11 @@
 To use the Syntho Application for this specific deployment option, we need to install both Ray and the Syntho Application as part of this Syntho Application. The Syntho Application will be used as the self-service interface for our application. Deploying the Syntho Application and Ray using Docker can be done a few ways:
 
 - Option 1: Depending on whether support for for autoscaling Ray workers is necessary, we can either deploy by using the Ray cluster manager directly in the following cloud providers: AWS, GCP, Azure.
-The Ray cluster manager will enable autoscaling based on a given configuration. We will then separately deploy a single instance running the Syntho Application using `docker-compose` in the same network as the Ray cluster. See section Deployment using Ray cluster manager in the [file for the JupyterHub & Ray deployment](./jupyterhub_ray.md#deployment-using-ray-cluster-manager-option-1) (Recommended)
+The Ray cluster manager will enable autoscaling based on a given configuration. We will then separately deploy a single instance running the Syntho Application using `docker-compose` in the same network as the Ray cluster. See section [Deployment using Ray cluster manager (Option 1)](#deployment-using-ray-cluster-manager-option-1).
 
-- Option 2: Deploying Ray instances manually using Docker. Autoscaling using Ray will not be available and the nodes need to be connected manually to the head node of Ray. The Syntho Application will still be deployed using `docker-compose`. See section Deployment using manual Ray cluster (Option 2) in the [file for the JupyterHub & Ray deployment](./jupyterhub_ray.md#deployment-using-manual-ray-cluster-option-2)
+- Option 2: Deploying Ray instances manually using Docker. Autoscaling using Ray will not be available and the nodes need to be connected manually to the head node of Ray. The Syntho Application will still be deployed using `docker-compose`. See section [Deployment using manual Ray cluster (Option 2)](#deployment-using-manual-ray-cluster-option-2).
 
-The Syntho Application itself will be installed using a docker-compose file together with the correct environment variables set. This document will continue to explain the installation of the Syntho Application and not Ray, see the [file for the JupyterHub & Ray deployment](./jupyterhub_ray.md) for more information on the Ray part of the deployment.
+The Syntho Application itself will be installed using a docker-compose file together with the correct environment variables set. See section [The Syntho Application deployment](#the-syntho-application-deployment).
 
 ## Requirements
 
@@ -55,7 +55,7 @@ The images necessary for this deployment for both Ray and the Syntho Application
 
 - syntho-ray
   - Version: latest
-  - Has the latest Ray version installed that is compatible with the Syntho Application. See the document [Jupyterhub & Ray deployment](./jupyterhub_ray.md#deployment-using-manual-ray-cluster-option-2) for more the deployment instructions for Ray.
+  - Has the latest Ray version installed that is compatible with the Syntho Application.
 - syntho-core-api
   - Version: latest
   - The Syntho Core API is responsible for the core operations of the Syntho Platform.
@@ -75,6 +75,177 @@ docker login <registry> -u <username>
 ```
 
 The registry, username and password will be provided by the Syntho Support Team.
+
+## Deployment using Ray cluster manager (Option 1)
+
+This deployment option will use the Ray cluster manager to deploy the Ray cluster. The Ray cluster manager will automatically deploy the Ray cluster based on the configuration file provided. The Syntho Application will be deployed using `docker-compose` in the same network as the Ray cluster. The files necessary for the Ray deployment can be found [here](https://github.com/syntho-ai/syntho-charts/tree/master/docker-compose/ray)
+
+### Configuring the Ray configuration file
+
+We will go through the sections necessary to adjust in the `configuration.yaml` file for Ray. Once completed, we can create the cluster by running `ray up configuration.yaml`.
+
+#### Setting the name of the cluster
+
+The name of the cluster can be set using the `cluster_name` block. See:
+
+```[yaml]
+cluster_name: syntho_cluster
+```
+
+#### Setting the image
+
+In the `configuration.yaml` file, we need to set the right image for Ray to use. Under `docker.image` we can set the image to use. Example:
+
+```[yaml]
+docker:
+    image: "<registry>/syntho-ray:latest" 
+```
+
+#### Configuring the nodes
+
+Under the section `available_node_types` we can set the amount of nodes that we want to have available. Each section under `available_node_types` defines the amount of workers and the configuration of the node. We will always start with a configuration block for the head node, followed by the workers. An example configuration is:
+
+```[yaml]
+
+# The maximum number of workers nodes to launch in addition to the head
+# node.
+max_workers: 4
+
+available_node_types:
+    ray.head.default:
+        # The resources provided by this node type.
+        resources: {"CPU": 4}
+        # Provider-specific config, e.g. instance type.
+        node_config:
+            azure_arm_parameters:
+                vmSize: Standard_D4s_v4
+                # List images https://docs.microsoft.com/en-us/azure/virtual-machines/linux/cli-ps-findimage
+                imagePublisher: microsoft-dsvm
+                imageOffer: ubuntu-1804
+                imageSku: 1804-gen2
+                imageVersion: latest
+    ray.worker.default:
+        # The minimum number of worker nodes of this type to launch.
+        # This number should be >= 0.
+        min_workers: 2
+        # The maximum number of worker nodes of this type to launch.
+        # This takes precedence over min_workers.
+        max_workers: 3
+        # The resources provided by this node type.
+        resources: {"CPU": 32}
+        # Provider-specific config, e.g. instance type.
+        node_config:
+            azure_arm_parameters:
+                vmSize: Standard_D32s_v4
+                # List images https://docs.microsoft.com/en-us/azure/virtual-machines/linux/cli-ps-findimage
+                imagePublisher: microsoft-dsvm
+                imageOffer: ubuntu-1804
+                imageSku: 1804-gen2
+                imageVersion: latest
+                # optionally set priority to use Spot instances
+                priority: Spot
+                # set a maximum price for spot instances if desired
+                # billingProfile:
+                #     maxPrice: -1
+```
+
+The Syntho Support Team can help for deciding what the optimal cluster configuration should be. Please request an initial cluster configuration based on the data requirements with them.
+
+In this case, we have set the node configuration for Azure instances. The head node uses 1 Standard_D4s_v3 instance with a pre-configured Ubuntu 18.04 image. This image has Docker pre-installed.
+
+For the workers, we have set the default amount of workers to be 2 (`available_node_types.ray_worker_default.min_workers`). In case that the resources are being over-used, this configuration will auto-scale up to 3 workers (`available_node_types.ray_worker_default.max_workers`). To keep costs lower, we used spot instances (`available_node_types.ray_worker_default.node_config.azure_arm_parameters.priority`).
+
+We also need to set the amount of workers on `max_workers`, which represents the amount of workers that can be spawned (not counting the head node).
+
+We can adjust the amount of workers Ray will spawn by adjusting the `resources` parameter. For now we have set this value to be the same as the amount of CPUs available for the given instances.
+
+#### Configuring file mounts
+
+To be able to connect to the head node, it is recommended that a SSH public key is uploaded on the machines from the machine running the Ray commands. We can also upload other files if desired. Here's an example of configuring the file mounts:
+
+```[yaml]
+file_mounts: {
+#    "/path1/on/remote/machine": "/path1/on/local/machine",
+     "~/.ssh/id_rsa.pub": "~/.ssh/id_rsa.pub",
+}
+```
+
+This example will upload the public key `~/.ssh/id_rsa.pub` on the local machine to all nodes. Please adjust this to include a public key of your choice that will be uploaded to the Ray nodes. This key can be used for diagnostic purposes, like retrieving the logs from a certain node. Any other file that is necessary to be on all the machines can be added here as well.
+
+#### Setting up the registry credentials
+
+In this setup, the Ray cluster manager will create all the instances. We have to provide the correct command and credentials for docker to work. We will do so by setting up the block `initialization_commands`. An example of this block:
+
+```[yaml]
+initialization_commands:
+    # enable docker setup
+    - sudo usermod -aG docker $USER || true
+    - sleep 10  # delay to avoid docker permission denied errors
+    # get rid of annoying Ubuntu message
+    - touch ~/.sudo_as_admin_successful
+    - docker login <registry> -u <username> -p <password>
+```
+
+To prevent an issues, we first add the current user to the docker group and remove the standard Ubuntu messages. Once that is done, we call `docker login` to connect to the registry. We included the password flag `-p` here, since we can't provide CLI input with the password in this way.
+
+### Creating the Ray cluster
+
+Once the `configuration.yaml` has been setup correctly, we can use the following command to create the Ray cluster:
+
+```[sh]
+ray up configuration.yaml
+```
+
+Remember the IP address of the Ray head node (or the hostname of the machine), so that we can use that later to connect the cluster to our Syntho Application.
+
+## Deployment using manual Ray cluster (Option 2)
+
+For this setup, we will be using the files found in our `syntho-charts` repo, specifically [here](https://github.com/syntho-ai/syntho-charts/tree/master/docker-compose/ray/option-2).
+
+### Creating the head node
+
+On the VM instance that is designated to run as the head node, make sure that Docker is installed and the `docker login` has been executed with the supplied credentials for the container registry. In the folder `docker-compose/ray/option-2`, copy the file `docker-compose-head.yaml` to the head node instance.
+
+First we need to add the environment variable with the head node IP, license key and image name. Please create the file `.env` and add:
+
+```[sh]
+RAY_HEAD_IP=<ip-of-head-node>
+SYNTHO_RAY_IMAGE=<syntho-ray-image>
+LICENSE_KEY=<license-key>
+```
+
+Once this `.env` file is created, we can simply run:
+
+```[sh]
+docker compose up -d
+```
+
+Once the container is started, look into the logs by using `docker compose logs` and note down the IP address found in this line:
+
+```[sh]
+ray-head  | 2022-06-02 00:37:05,751     INFO scripts.py:744 -- To connect to this Ray runtime from another node, run
+ray-head  | 2022-06-02 00:37:05,752     INFO scripts.py:747 --   ray start --address='<ip-address>:6379'
+```
+
+This IP address should be the private IP from within the created network. We will need this IP as an environment variable for the worker to correctly connect to the head node instance.
+
+### Creating the worker nodes
+
+On the VM instances that are assigned as the workers, we need to use the file `docker-compose-worker.yaml` in the folder `docker-compose/ray/option-2` to run the worker. Also make sure that `docker login` has been run on this machine, so that we have access to the registry containing the container.
+
+First we need to add the environment variable with the head node IP. Please create the file `.env` and add:
+
+```[sh]
+RAY_HEAD_IP=<ip-of-head-node>
+```
+
+Once this `.env` file is created, we can simply run:
+
+```[sh]
+docker compose up -d
+```
+
+This should create the worker and connect it to the head node. If any issues arise, make sure that ports 6379 and 10001 are accessible on the head node for all workers.
 
 ## The Syntho Application deployment
 
@@ -137,7 +308,7 @@ If the Redis instance defined in the `docker-compose` file is used, then these c
 
 #### Ray
 
-To connect the Core API to a Ray instance, we need to set the variable `RAY_ADDRESS` in the `.env` file. This should be set to the IP address or hostname of the Ray head instance. This refers back to the [other document](./jupyterhub_ray.md), where we explain how to install Ray. At the end of those steps, the IP or hostname of the Ray head instance should be known.
+To connect the Core API to a Ray instance, we need to set the variable `RAY_ADDRESS` in the `.env` file. This should be set to the IP address or hostname of the Ray head instance.
 
 ```[sh]
 RAY_ADDRESS=<ray-head-ip-address>
