@@ -29,21 +29,23 @@ To install the Syntho Application, the following requirements need to be met:
   - Docker 1.13.0+ ​installed.
     - Please see the [official docker documentation](https://docs.docker.com/engine/install/) for the installation instructions.
   - `docker-compose` 2.x.x  installed.
-    - Please see the [official docker-compose documentation](https://docs.docker.com/compose/install/) for the installation instructions.
+    - Please see the [official docker compose documentation](https://docs.docker.com/compose/install/) for the installation instructions.
   - `docker-compose` file version will be v3.
 - Postgres database
-  - Either by including a Postgres database in the deployment or have an external database available. Two different databases need to be created in this instances.
+  - The docker compose file will have a postgres instance included. It is also possible to use an external database. In case an external database is used, two different databases need to be available.
 - Redis instance
-  - The redis instances can be included when deploying using docker-compose. If this is removed from the docker-compose, a Redis instance needs to be created for the Syntho Application to connect to.
+  - The redis instances is included when deploying using docker compose. If this is removed from the docker-compose, a Redis instance needs to be created for the Syntho Application to connect to.
 - Reachable IP address and outbound port defined for the Syntho Application (by default this is port 3000).
 - Internal networking between 3 VM instances.
 - Docker images
   - Either by having access to the container registry.
   - or loading them in manually using `docker load` after receiving the docker images in .tar.gz format.
 - Configuration files
-  - The Syntho Support Team will provide the required files depending on the chosen deployment option.
+  - The configuration files are available in the Syntho repository on Github called [syntho-charts](https://github.com/syntho-ai/syntho-charts/tree/master/docker-compose). The relevant folders for this deployment are syntho-ui and ray.
 - [Optional] DNS zone and DNS record for UI.
   - Example: syntho.company.com be used for hosting the UI.
+- [Optional] SSL certificate
+  - If the Syntho Application is to be accessed via HTTPS, a SSL certificate is required. This is highly recommended for production environments.
 
 ## Preparations
 
