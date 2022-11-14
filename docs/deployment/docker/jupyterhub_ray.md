@@ -6,7 +6,7 @@
 2. [Requirements](#requirements)
 3. [Preparations](#preparations)
 4. [Deployment using Ray cluster manager (Option 1)](#deployment-using-ray-cluster-manager-option-1)
-5. [Deployment using Ray cluster manager (Option 2)](#deployment-using-ray-cluster-manager-option-2)
+5. [Deployment using manual Ray cluster (Option 2)](#deployment-using-manual-ray-cluster-option-2)
 6. [Testing the application](#testing-the-application)
 7. [Upgrading the application](#upgrading-the-application)
 
@@ -191,13 +191,63 @@ ray up configuration.yaml
 
 Remember the IP address of the Ray head node (or the hostname of the machine), so that we can use that later to connect to the cluster from JupyterHub.
 
-### Setting up JupyterHub
+## Deployment using manual Ray cluster (Option 2)
+
+If the first option of deploying Ray was not possible, we can manually deploy Ray instances using `docker-compose`. We will use the remaining VM instances to run certain Docker commands on to create the head node and the corresponding worker nodes. Please make sure that they are part of the same network, so that we can reach the other machines on most ports.
+
+### Creating the head node
+
+On the VM instance that is designated to run as the head node, make sure that Docker is installed and the `docker login` has been executed with the supplied credentials for the container registry. In the folder `docker-compose/ray/option-2`, copy the file `docker-compose-head.yaml` to the head node instance.
+
+We will only need to adjust the image name and license key for this deployment. We can do so by setting the following environment variables (or editing the .env file):
+  
+```[sh]
+SYNTHO_RAY_IMAGE=<syntho-ray-image>
+LICENSE_KEY=<license-key>
+```
+
+We can now simply run:
+
+```[sh]
+docker compose up -d
+```
+
+Once the container is started, look into the logs by using `docker compose logs` and note down the IP address found in this line:
+
+```[sh]
+ray-head  | 2022-06-02 00:37:05,751     INFO scripts.py:744 -- To connect to this Ray runtime from another node, run
+ray-head  | 2022-06-02 00:37:05,752     INFO scripts.py:747 --   ray start --address='<ip-address>:6379'
+```
+
+This IP address should be the private IP from within the created network. We will need this IP as an environment variable for the worker to correctly connect to the head node instance.
+
+### Creating the worker nodes
+
+On the VM instances that are assigned as the workers, we need to use the file `docker-compose-worker.yaml` in the folder `docker-compose/ray/option-2` to run the worker. Also make sure that `docker login` has been run on this machine, so that we have access to the registry containing the container.
+
+First we need to add the environment variable with the head node IP, license key and image name. Please create the file `.env` and add:
+
+```[sh]
+RAY_HEAD_IP=<ip-of-head-node>
+SYNTHO_RAY_IMAGE=<syntho-ray-image>
+LICENSE_KEY=<license-key>
+```
+
+Once this `.env` file is created, we can simply run:
+
+```[sh]
+docker compose up -d
+```
+
+This should create the worker and connect it to the head node. If any issues arise, make sure that ports 6379 and 10001 are accessible on the head node for all workers.
+
+## Setting up JupyterHub
 
 We will be setting up JupyterHub using docker compose in the dedicated instance for JupyterHub. The creation of the Ray cluster will have setup a virtual network that the Ray cluster nodes will use. It is important that the instance running JupyterHub is either added to or created in that network.
 
 We will then configure the environment variables and the JupyterHub configuration file in the next steps for the folder containing the docker compose file for JupyterHub.
 
-#### Docker image
+### Docker image
 
 In the environment variables, we need to set the following variable to use the correct docker image:
 
@@ -207,7 +257,7 @@ DOCKER_NOTEBOOK_IMAGE=<registry>/syntho-jupyter:latest
 
 This will create a Docker environment for every user that logs in, using the syntho-jupyter image. 
 
-#### Application access
+### Application access
 
 Depending on how the application needs to be accessed, a simple IP address or DNS record can be used. Please remember the private or public IP address of the instance to assign it to a DNS record.
 
@@ -220,7 +270,7 @@ If a DNS record (public or private) is used, it is recommended to setup HTTPS us
 
 Next set the environment variables `SSL_KEY` and `SSL_CERT` to their correct values.
 
-#### Authentication method
+### Authentication method
 
 Next we will define the authentication method for the JupyterHub environment. There are a multitude of choices possible, see the [JupyterHub documentation](https://jupyterhub.readthedocs.io/en/stable/reference/authenticators.html) for all possibilities.
 
@@ -242,7 +292,7 @@ c.AzureAdOAuthenticator.client_secret = '{AAD-APP-CLIENT-SECRET}'
 
 The preferred method of authentication could differ of course. For more help on setting the Authentication method, please contact the Syntho Support Team.
 
-#### Deploy using docker-compose - JupyterHub
+### Deploy using docker-compose - JupyterHub
 
 Once the configuration is done, we can run the containers in detached mode using the following command:
 
@@ -251,47 +301,6 @@ docker compose up -d
 ```
 
 If any issues arise during this step, please contact the Syntho Support Team.
-
-## Deployment using manual Ray cluster (Option 2)
-
-The deployment of Option 1 overlaps with Option 2 when it comes to deploying JupyterHub. **Please refer to section [Setting up JupyterHub](#setting-up-jupyterhub) for the instructions on how to deploy JupyterHub.** We will use the remaining VM instances to run certain Docker commands on to create the head node and the corresponding worker nodes. Please make sure that they are part of the same network, so that we can reach the other machines on most ports.
-
-### Creating the head node
-
-On the VM instance that is designated to run as the head node, make sure that Docker is installed and the `docker login` has been executed with the supplied credentials for the container registry. In the folder `docker-compose/ray/option-2`, copy the file `docker-compose-head.yaml` to the head node instance.
-
-No configuration needs to be adjusted for this, we can now simply run:
-
-```[sh]
-docker compose up
-```
-
-Once the container is started, look into the logs by using `docker compose logs` and note down the IP address found in this line:
-
-```[sh]
-ray-head  | 2022-06-02 00:37:05,751     INFO scripts.py:744 -- To connect to this Ray runtime from another node, run
-ray-head  | 2022-06-02 00:37:05,752     INFO scripts.py:747 --   ray start --address='<ip-address>:6379'
-```
-
-This IP address should be the private IP from within the created network. We will need this IP as an environment variable for the worker to correctly connect to the head node instance.
-
-### Creating the worker nodes
-
-On the VM instances that are assigned as the workers, we need to use the file `docker-compose-worker.yaml` in the folder `docker-compose/ray/option-2` to run the worker. Also make sure that `docker login` has been run on this machine, so that we have access to the registry containing the container.
-
-First we need to add the environment variable with the head node IP. Please create the file `.env` and add:
-
-```[sh]
-RAY_HEAD_IP=<ip-of-head-node>
-```
-
-Once this `.env` file is created, we can simply run:
-
-```[sh]
-docker compose up
-```
-
-This should create the worker and connect it to the head node. If any issues arise, make sure that ports 6379 and 10001 are accessible on the head node for all workers.
 
 ## Testing the application
 
