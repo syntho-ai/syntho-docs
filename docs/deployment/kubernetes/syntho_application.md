@@ -17,6 +17,8 @@ To install the Syntho Application, the following requirements need to be met:
   - The redis instances can be included when deploying using Helm. If this is disabled, a Redis instance needs to be created for the Syntho Application to connect to.
 - [Optional] DNS zone and DNS record for UI.
   - Example: syntho.company.com be used for hosting the UI.
+- [Optional] SSL certificate
+  - Either provided using [`cert-manager`](https://cert-manager.io/docs/) to handle certificates or by creating a tls secret and providing the secret to the ingress sections.
 
 ## Preparations
 
@@ -34,19 +36,26 @@ The images necessary for this deployment:
 - syntho-core-api
   - Version: latest
   - The Syntho Core API is responsible for the core operations of the Syntho Platform.
+  - Used in chart: syntho-ui
 - syntho-frontend
   - Version: latest
-  - The Syntho UI is a container that contains the web UI fro the Syntho Platform.
+  - The Syntho UI is a container that contains the web UI for the Syntho Platform.
+  - Used in chart: syntho-ui
 - syntho-backend
   - Version: latest
   - The Syntho Backend is responsible for user management and workspace management.
+  - Used in chart: syntho-ui
+
 - syntho-ray
   - Version: latest
   - Has the latest Ray version installed that is compatible with the Syntho Application.
+  - Used in chart: ray
+
+The Syntho Team may indicate different versions (or tags) to be used. Using the latest tag is not always recommended, so the Syntho Team may specify a specific version to be used.
 
 ## Deployment using Helm
 
-We will deploy the application in a dedicated namespace in Kubernetes, which we call `syntho` for now. If the namespace does not exist, create it by running:
+For this example, we will deploy the application in a dedicated namespace in Kubernetes, which we call `syntho` for now. If the namespace does not exist, create it by running:
 
 ```[bash]
 kubectl create namespace syntho
@@ -141,6 +150,10 @@ helm install ray-cluster ./helm/ray --values values.yaml --namespace syntho
 
 Once deployed, we can find the service name in Kubernetes for the Ray application. In the case of using the name `ray-cluster` as is the case in the command above, the service name (and hostname to use in the variable `ray_address` for the Core API values section) is `ray-cluster-ray-head`.
 
+Lastly, we can check the ray-operator pod and subsequent ray head or ray worker pods. Running `kubectl logs deployment/ray-operator -n syntho` will show us the logs of the operator.
+
+**Note: if any errors are found in the logs of ray-operator, please uninstall the ray helm deployment by running `helm uninstall ray-cluster -n syntho` and install again using `helm install`. In some cases Ray fails to retrieve the correct authorizations, causing an error when creating the actual cluster**
+
 ## Deployment of Syntho Application using Helm
 
 To deploy the Syntho Application, we will use the Helm chart in the same repository as mentioned before `syntho-ai/syntho-charts`. The chart can be found in the folder `helm/syntho-ui`. The rest of this paragraph will assume access to the folder `helm/syntho-ui` in the master branch of the aforementioned github repository.
@@ -190,7 +203,7 @@ ingress:
     tls:  # In case SSL is not used, the tls section can be removed
       - hosts:
         - <hostname>
-        secretName: frontend-tls
+        secretName: frontend-tls  # Set to either existing secret or when using cert-manager to manage certificates
 ```
 
 If an ingress is not necessary, it can be disabled by setting `ingress.enabled` to false:
@@ -199,6 +212,14 @@ If an ingress is not necessary, it can be disabled by setting `ingress.enabled` 
 frontend:
   ingress:
     enabled: false
+```
+
+**Note: in the case that the SSL certificate is a self-signed certificate or a certificate that can not be verified within the container, we have to set some additional variables if the instance is not able to verify the certificate. See the following code block:**
+
+```[yaml]
+frontend:
+  env:
+    JAVA_OPTS: "-Dio.swagger.parser.util.RemoteUrl.trustAll=true -Dio.swagger.v3.parser.util.RemoteUrl.trustAll=true"
 ```
 
 ### Configuring the Backend
@@ -344,6 +365,16 @@ helm install syntho-ui ./helm/syntho-ui --values values.yaml --namespace syntho
 ## Testing the deployment
 
 Once both Helm charts are deployed, the application should be reachable on the defined url of the frontend. To test this, we can simply open a browser and navigate to the url of the frontend `frontend_url`. If the deployment was successful, we should see the login page of the Syntho application and should be able to login with the credentials of the admin user we defined in the `values.yaml` file.
+
+## Troubleshooting
+
+### UI not accessible on provided URL
+
+In case the application is not accessible using the provided URL, a few things can be wrong:
+
+#### 1. Application not being served
+
+The deployment called frontend might not have a ready pod yet. Please check the pods under the deployment called `frontend` and see if any errors arose during the starting of the application. Please contact the Syntho Team if any unexpected errors occur.
 
 ## Upgrading the applications
 
