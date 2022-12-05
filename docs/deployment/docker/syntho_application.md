@@ -23,7 +23,7 @@ The Syntho Application itself will be installed using a docker-compose file toge
 
 To install the Syntho Application, the following requirements need to be met:
 
-- Have at least 3 VM instances running.
+- Have at least 2 VM instances running.
   - OS: Any Linux OS capable of running docker & docker-compose.
   - Preferably with SSD storage.
   - Docker 1.13.0+ ​installed.
