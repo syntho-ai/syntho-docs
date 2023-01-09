@@ -11,9 +11,9 @@ To install the Syntho Application, the following requirements need to be met:
   - For managing the Kubernetes cluster
 - Helm v3 installed.
   - See instructions on how to install Helm [here](https://helm.sh/docs/intro/install/).
-- Postgres database
+- a Postgres database
   - Either by including a Postgres database in the deployment or have an external database available. Two different databases need to be created in this instances.
-- Redis instance
+- a Redis instance
   - The redis instances can be included when deploying using Helm. If this is disabled, a Redis instance needs to be created for the Syntho Application to connect to.
 - [Optional] DNS zone and DNS record for UI.
   - Example: syntho.company.com be used for hosting the UI.
@@ -118,9 +118,17 @@ Please use the license key provided by Syntho.
 
 Depending on the size and amount of nodes of the cluster, adjust the amount of workers that Ray has available for tasks. Under `podTypes.rayHeadType` we can set the resources for the head node, which we recommend to keep as is in the provided file. This head node will mostly be used for administrative tasks in Ray and the worker nodes will be picking up most of the tasks for the Syntho Application.
 
-We recommend two pools of workers, where the first pool has a higher amount of memory, but a low amount of workers and the second pool with reverse conditions. Depending on the CPUs and Memory available in the node, the amount of CPUs and Memory can be set. An example of a cluster with two node pools, of 1 machine (autoscaling up to 3), with 16 CPUs and 64GB of RAM and another of 1 machine (autoscaling up to 3) with 8 CPUs and 32GB of RAM:
+For a production environment we recommend two pools of workers, where the first pool has a higher amount of memory, but a low amount of workers and the second pool with reverse conditions. Depending on the CPUs and memory available in the node, the amount of CPUs and memory can be set. An example of a cluster with a head node (always required) and two node pools, of 1 machine (autoscaling up to 3), with 16 CPUs and 64GB of RAM and another of 1 machine (autoscaling up to 3) with 8 CPUs and 32GB of RAM:
 
 ```[yaml]
+rayHeadType:
+      CPU: 8
+      memory: 32Gi
+      GPU: 0
+      rayResources: {}
+      nodeSelector: {}
+      tolerations: []
+
 rayWorkerType:
     # minWorkers is the minimum number of Ray workers of this pod type to keep running.
     minWorkers: 1
@@ -129,6 +137,8 @@ rayWorkerType:
     memory: 50Gi
     CPU: 5
     GPU: 0
+    nodeSelector: {}
+    tolerations: []
 
 rayWorkerType2:
     minWorkers: 3
@@ -136,9 +146,30 @@ rayWorkerType2:
     memory: 8Gi
     CPU: 2
     GPU: 0
+    nodeSelector: {}
+    tolerations: []
 ```
 
 If autoscaling is enabled in Kubernetes, new nodes will be created once the Ray requirements are higher than the available resources. Please discuss with together with the Syntho Team which situation would fit your data requirements.
+
+For development or experimental environments, most of the time a less advanced setup is needed. In this case we recommend only setting up a head node type to begin with and no workers or additional autoscaling setup. An example of this would be:
+
+```[yaml]
+ rayHeadType:
+        CPU: 8
+        memory: 32Gi
+        GPU: 0
+        rayResources: {}
+        nodeSelector: {}
+        tolerations: []
+
+```
+
+Additionally, `nodeSelector` and `tolerations` can be defined for each type of node, to have some control over where the pods/nodes exactly get assigned.
+
+### Volumes [**Optional**]
+
+If certain volumes need to be mounted, the values `extraVolumes` and `extraVolumeMounts` can be used to define those. Keep in mind when using PV that Ray may schedule multiple pods using that particular volume, so it will need to be accessible from multiple machines.
 
 ### Deploy using Helm - Ray
 
@@ -152,7 +183,21 @@ Once deployed, we can find the service name in Kubernetes for the Ray applicatio
 
 Lastly, we can check the ray-operator pod and subsequent ray head or ray worker pods. Running `kubectl logs deployment/ray-operator -n syntho` will show us the logs of the operator.
 
-**Note: if any errors are found in the logs of ray-operator, please uninstall the ray helm deployment by running `helm uninstall ray-cluster -n syntho` and install again using `helm install`. In some cases Ray fails to retrieve the correct authorizations, causing an error when creating the actual cluster**
+### Troubleshooting issues
+
+**Head and/or Worker pods not showing as expected.**
+
+In some cases, the following logs appear in the ray-operator pod:
+
+```[sh]
+Not enough permissions to watch for resources: changes (creation/deletion/updates) will not be noticed; the resources are only refreshed on operator restarts.
+Not enough permissions to list namespaces. Falling back to a list of namespaces which are assumed to exist: {'ray'}
+Not enough permissions to watch for namespaces: changes (deletion/creation) will not be noticed; the namespaces are only refreshed on operator restarts.
+```
+
+This can be caused by a couple of things, but the quickest one seems to be an internal bug. The quick solution is to reinstall the Helm chart by using `helm uninstall` followed by the `helm install` command for this chart.
+
+If any errors are found in the logs of ray-operator, please uninstall the ray helm deployment by running `helm uninstall ray-cluster -n syntho` and install again using `helm install`. In some cases Ray fails to retrieve the correct authorizations, causing an error when creating the actual cluster
 
 ## Deployment of Syntho Application using Helm
 
