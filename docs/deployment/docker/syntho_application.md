@@ -317,10 +317,10 @@ If the Redis instance defined in the `docker-compose` file is used, then these c
 
 #### Ray
 
-To connect the Core API to a Ray instance, we need to set the variable `RAY_ADDRESS` in the `.env` file. This should be set to the IP address or hostname of the Ray head instance.
+To connect the Core API to a Ray instance, we need to set the variable `CORE_RAY_ADDRESS` in the `.env` file. This should be set to the IP address or hostname of the Ray head instance.
 
 ```[sh]
-RAY_ADDRESS=<ray-head-ip-address>
+CORE_RAY_ADDRESS=<ray-head-ip-address>
 ```
 
 #### Setting additional variables
