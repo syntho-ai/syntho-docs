@@ -208,15 +208,20 @@ For this setup, we will be using the files found in our `syntho-charts` repo, sp
 
 On the VM instance that is designated to run as the head node, make sure that Docker is installed and the `docker login` has been executed with the supplied credentials for the container registry. In the folder `docker-compose/ray/option-2`, copy the file `docker-compose-head.yaml` to the head node instance.
 
-First we need to add the environment variable with the head node IP, license key and image name. Please create the file `.env` and add:
+First we need to add the environment variable with the head node IP, license key and image name. Copy the `example.env` file to `.env` using `cp example.env .env` and make sure the following variables are set:
 
 ```[sh]
-RAY_HEAD_IP=<ip-of-head-node>
 SYNTHO_RAY_IMAGE=<syntho-ray-image>
 LICENSE_KEY=<license-key>
 ```
 
-Once this `.env` file is created, we can simply run:
+Next, we need to copy the file `docker-compose-head.yaml` to `docker-compose.yaml`. We can do so by running the following command:
+
+```[sh]
+cp docker-compose-head.yaml docker-compose.yaml
+```
+
+Once the `.env` and `docker-compose.yaml` file is created, we can simply run:
 
 ```[sh]
 docker compose up -d
@@ -239,6 +244,8 @@ First we need to add the environment variable with the head node IP. Please crea
 
 ```[sh]
 RAY_HEAD_IP=<ip-of-head-node>
+SYNTHO_RAY_IMAGE=<syntho-ray-image>
+LICENSE_KEY=<license-key>
 ```
 
 Once this `.env` file is created, we can simply run:
