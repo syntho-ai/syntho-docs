@@ -135,7 +135,7 @@ clustername: ray-cluster
 
 Depending on the size and amount of nodes of the cluster, adjust the amount of workers that Ray has available for tasks. Ray will need at least one head instance. To increase performance, we can create additional worker groups as well. Under `head` we can set the resources for the head node. This head node will mostly be used for administrative tasks in Ray and the worker nodes will be picking up most of the tasks for the Syntho Application.
 
-For a production environment we recommend two pools of workers, where the first pool has a higher amount of memory, but a low amount of workers and the second pool with reverse conditions. Depending on the CPUs and memory available in the node, the amount of CPUs and memory can be set. An example of a cluster with a head node (always required) and two node pools, of 1 machine (autoscaling up to 3), with 16 CPUs and 64GB of RAM and another of 1 machine (autoscaling up to 3) with 8 CPUs and 32GB of RAM:
+For a production environment we recommend two pools of workers, where the first pool has a higher amount of memory, but a low amount of workers and the second pool with reverse conditions. Depending on the CPUs and memory available in the node, the amount of CPUs and memory can be set. An example of a cluster with a head node (always required) and two node pools, of 1 machine, with 16 CPUs and 64GB of RAM and another of 1 machine (autoscaling up to 3) with 4 CPUs and 8GB of RAM:
 
 ```[yaml]
 head:
