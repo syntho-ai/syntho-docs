@@ -82,7 +82,7 @@ imagePullSecrets:
 
 ## Deployment of Ray using Helm
 
-To power the ML models, we will need to deploy a Ray cluster using Helm for the Core API to connect to. The chart can be found in the repository [here](https://github.com/syntho-ai/syntho-charts/tree/master/helm) or can be supplied by a repo url to be used in Helm directly. Please contact the Syntho team for this repo url.
+To distribute our computational requirements and run heavy jobs like synthesizing your data, we will need to deploy a [Ray](https://www.ray.io/) cluster using Helm for our API to connect to. The chart can be found in the repository [here](https://github.com/syntho-ai/syntho-charts/tree/master/helm) or can be supplied by a repo url to be used in Helm directly. Please contact the Syntho team for this repo url.
 
 This part of the documentation will assume access to the folder `helm/ray` in the master branch of the aforementioned github repository.
 
@@ -91,11 +91,18 @@ This part of the documentation will assume access to the folder `helm/ray` in th
 In the values.yaml file in `helm/ray`, set the following fields to ensure the usage of the correct Docker image:
 
 ```[yaml]
-operatorImage: <name-of-registry>/syntho-ray:<image-tag>
-image: <name-of-registry>/syntho-ray:<image-tag>
+operatorImage:
+  repository: syntho.azurecr.io/syntho-ray-operator
+  tag: <tag>
+  pullPolicy: IfNotPresent
+
+image:
+  repository: syntho.azurecr.io/syntho-ray
+  tag: <tag>
+  pullPolicy: IfNotPresent
 ```
 
-`<name-of-registry>` and `<image-tag>` will be provided by Syntho for your deployment.
+The image tag will be provided by the Syntho Team. In some cases the lastest tag can be used, but we recommend setting a specific tag.
 
 Next to setting the correct Docker image, define the Kubernetes `Secret` that is created under `imagePullSecrets`:
 
@@ -103,6 +110,8 @@ Next to setting the correct Docker image, define the Kubernetes `Secret` that is
 imagePullSecrets: 
     - name: syntho-cr-secret
 ```
+
+This value is set to `syntho-cr-secret` by default.
 
 ### License key - Ray
 
@@ -114,40 +123,131 @@ SynthoLicense: <syntho-license-key>
 
 Please use the license key provided by Syntho.
 
-### Workers and nodes
+### Cluster name
 
-Depending on the size and amount of nodes of the cluster, adjust the amount of workers that Ray has available for tasks. Under `podTypes.rayHeadType` we can set the resources for the head node, which we recommend to keep as is in the provided file. This head node will mostly be used for administrative tasks in Ray and the worker nodes will be picking up most of the tasks for the Syntho Application.
-
-For a production environment we recommend two pools of workers, where the first pool has a higher amount of memory, but a low amount of workers and the second pool with reverse conditions. Depending on the CPUs and memory available in the node, the amount of CPUs and memory can be set. An example of a cluster with a head node (always required) and two node pools, of 1 machine (autoscaling up to 3), with 16 CPUs and 64GB of RAM and another of 1 machine (autoscaling up to 3) with 8 CPUs and 32GB of RAM:
+The default cluster name is set to `ray-cluster`. In case this needs to be adjusted, you can do so by changing `clustername`:
 
 ```[yaml]
-rayHeadType:
-      CPU: 8
-      memory: 32Gi
-      GPU: 0
-      rayResources: {}
-      nodeSelector: {}
-      tolerations: []
+clustername: ray-cluster
+```
 
-rayWorkerType:
-    # minWorkers is the minimum number of Ray workers of this pod type to keep running.
-    minWorkers: 1
-    # maxWorkers is the maximum number of Ray workers of this pod type to which Ray will scale.
-    maxWorkers: 3
-    memory: 50Gi
-    CPU: 5
-    GPU: 0
+### Workers and nodes
+
+Depending on the size and amount of nodes of the cluster, adjust the amount of workers that Ray has available for tasks. Ray will need at least one head instance. To increase performance, we can create additional worker groups as well. Under `head` we can set the resources for the head node. This head node will mostly be used for administrative tasks in Ray and the worker nodes will be picking up most of the tasks for the Syntho Application.
+
+For a production environment we recommend two pools of workers, where the first pool has a higher amount of memory, but a low amount of workers and the second pool with reverse conditions. Depending on the CPUs and memory available in the node, the amount of CPUs and memory can be set. An example of a cluster with a head node (always required) and two node pools, of 1 machine, with 16 CPUs and 64GB of RAM and another of 1 machine (autoscaling up to 3) with 4 CPUs and 8GB of RAM:
+
+```[yaml]
+head:
+  rayStartParams:
+    dashboard-host: '0.0.0.0'
+    block: 'true'
+  containerEnv:
+  - name: RAY_SCHEDULER_SPREAD_THRESHOLD
+    value: "0.0"
+  envFrom: []
+  resources:
+    limits:
+      cpu: "1"
+      # To avoid out-of-memory issues, never allocate less than 2G memory for the Ray head.
+      memory: "2G"
+    requests:
+      cpu: "1"
+      memory: "2G"
+  annotations: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  securityContext: {}
+  ports:
+  - containerPort: 6379
+    name: gcs
+  - containerPort: 8265
+    name: dashboard
+  - containerPort: 10001
+    name: client
+  volumes:
+    - name: log-volume
+      emptyDir: {}
+  volumeMounts:
+    - mountPath: /tmp/ray
+      name: log-volume
+  sidecarContainers: []
+
+
+worker:
+  # If you want to disable the default workergroup
+  # uncomment the line below
+  # disabled: true
+  groupName: workergroup
+  replicas: 1
+  labels: {}
+  rayStartParams:
+    block: 'true'
+  initContainerImage: 'busybox:1.28'
+  initContainerSecurityContext: {}
+  containerEnv:
+   - name: RAY_SCHEDULER_SPREAD_THRESHOLD
+     value: "0.0"
+  envFrom: []
+  resources:
+    limits:
+      cpu: "16"
+      memory: "64G"
+    requests:
+      cpu: "16"
+      memory: "64G"
+  annotations: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  securityContext: {}
+  volumes:
+    - name: log-volume
+      emptyDir: {}
+  volumeMounts:
+    - mountPath: /tmp/ray
+      name: log-volume
+  sidecarContainers: []
+
+# The map's key is used as the groupName.
+# For example, key:small-group in the map below
+# will be used as the groupName
+additionalWorkerGroups:
+  smallGroup:
+    # Disabled by default
+    disabled: false
+    replicas: 1
+    minReplicas: 1
+    maxReplicas: 3
+    labels: {}
+    rayStartParams:
+      block: 'true'
+    initContainerImage: 'busybox:1.28'
+    initContainerSecurityContext: {}
+    containerEnv:
+    - name: RAY_SCHEDULER_SPREAD_THRESHOLD
+      value: "0.0"
+    envFrom: []
+    resources:
+      limits:
+        cpu: 4
+        memory: "8G"
+      requests:
+        cpu: 4
+        memory: "8G"
+    annotations: {}
     nodeSelector: {}
     tolerations: []
-
-rayWorkerType2:
-    minWorkers: 3
-    maxWorkers: 5
-    memory: 8Gi
-    CPU: 2
-    GPU: 0
-    nodeSelector: {}
-    tolerations: []
+    affinity: {}
+    securityContext: {}
+    volumes:
+      - name: log-volume
+        emptyDir: {}
+    volumeMounts:
+      - mountPath: /tmp/ray
+        name: log-volume
+    sidecarContainers: []
 ```
 
 If autoscaling is enabled in Kubernetes, new nodes will be created once the Ray requirements are higher than the available resources. Please discuss with together with the Syntho Team which situation would fit your data requirements.
@@ -155,21 +255,71 @@ If autoscaling is enabled in Kubernetes, new nodes will be created once the Ray 
 For development or experimental environments, most of the time a less advanced setup is needed. In this case we recommend only setting up a head node type to begin with and no workers or additional autoscaling setup. An example of this would be:
 
 ```[yaml]
- rayHeadType:
-        CPU: 8
-        memory: 32Gi
-        GPU: 0
-        rayResources: {}
-        nodeSelector: {}
-        tolerations: []
+head:
+  rayStartParams:
+    dashboard-host: '0.0.0.0'
+    block: 'true'
+  containerEnv:
+  - name: RAY_SCHEDULER_SPREAD_THRESHOLD
+    value: "0.0"
+  envFrom: []
+  resources:
+    limits:
+      cpu: "4"
+      # To avoid out-of-memory issues, never allocate less than 2G memory for the Ray head.
+      memory: "32G"  # Depending on data requirements
+    requests:
+      cpu: "4"
+      memory: "32G"  # Depending on data requirements
+  annotations: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  securityContext: {}
+  ports:
+  - containerPort: 6379
+    name: gcs
+  - containerPort: 8265
+    name: dashboard
+  - containerPort: 10001
+    name: client
+  volumes:
+    - name: log-volume
+      emptyDir: {}
+  volumeMounts:
+    - mountPath: /tmp/ray
+      name: log-volume
+  sidecarContainers: []
+
+worker:
+  # If you want to disable the default workergroup
+  # uncomment the line below
+  disabled: true
+
+# The map's key is used as the groupName.
+# For example, key:small-group in the map below
+# will be used as the groupName
+additionalWorkerGroups:
+  smallGroup:
+    # Disabled by default
+    disabled: false
 
 ```
 
-Additionally, `nodeSelector` and `tolerations` can be defined for each type of node, to have some control over where the pods/nodes exactly get assigned.
+Additionally, `nodeSelector`, `tolerations` and `affinity` can be defined for each type of node, to have some control over where the pods/nodes exactly get assigned. `securityContext` and `annotiations` can also be set for each type of worker.
+
+### Shared storage of Ray workers
+
+We require an additional Persistent Volume for the Ray workers to share some metadata about the current tasks running. This included in the Helm chart and has the Persistent Volume type `ReadWriteMany`. In the section `storage` you can adjust the storageClassName to use for this. Please make sure that you're using a storageClass that support type `ReadWriteMany`.
+
+```[yaml]
+storage:
+  storageClassName: default  # Change to correct storageClass
+```
 
 ### Volumes [**Optional**]
 
-If certain volumes need to be mounted, the values `extraVolumes` and `extraVolumeMounts` can be used to define those. Keep in mind when using PV that Ray may schedule multiple pods using that particular volume, so it will need to be accessible from multiple machines.
+If certain volumes need to be mounted, the values `volumes` and `volumeMounts` can be adjusted to define those. Keep in mind when using PV that Ray may schedule multiple pods using that particular volume, so it will need to be accessible from multiple machines.
 
 ### Deploy using Helm - Ray
 
@@ -185,19 +335,52 @@ Lastly, we can check the ray-operator pod and subsequent ray head or ray worker 
 
 ### Troubleshooting issues
 
-**Head and/or Worker pods not showing as expected.**
+**Errors when using ArgoCD to deploy**
 
-In some cases, the following logs appear in the ray-operator pod:
+If you are using [ArgoCD](https://argoproj.github.io) to manage the operator, you will encounter the issue which complains the CRDs too long. Same with [this issue](https://github.com/prometheus-operator/prometheus-operator/issues/4439).
+The recommended solution is to split the operator into two Argo apps, such as:
 
-```[sh]
-Not enough permissions to watch for resources: changes (creation/deletion/updates) will not be noticed; the resources are only refreshed on operator restarts.
-Not enough permissions to list namespaces. Falling back to a list of namespaces which are assumed to exist: {'ray'}
-Not enough permissions to watch for namespaces: changes (deletion/creation) will not be noticed; the namespaces are only refreshed on operator restarts.
+* The first app just for installing the CRDs with `Replace=true` directly, snippet:
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ray-operator-crds
+spec:
+  project: default
+  source:
+    repoURL: <repo_url>
+    targetRevision: HEAD
+    path: helm/ray/crds
+  destination:
+    server: https://kubernetes.default.svc
+  syncPolicy:
+    syncOptions:
+    - Replace=true
 ```
 
-This can be caused by a couple of things, but the quickest one seems to be an internal bug. The quick solution is to reinstall the Helm chart by using `helm uninstall` followed by the `helm install` command for this chart.
+* The second app that installs the Helm chart with `skipCrds=true` (new feature in Argo CD 2.3.0), snippet:
 
-If any errors are found in the logs of ray-operator, please uninstall the ray helm deployment by running `helm uninstall ray-cluster -n syntho` and install again using `helm install`. In some cases Ray fails to retrieve the correct authorizations, causing an error when creating the actual cluster
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ray-operator
+spec:
+  source:
+    repoURL: <repo_url>
+    targetRevision: HEAD
+    path: helm/ray
+    helm:
+      skipCrds: true
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: ray-operator
+  syncPolicy:
+    syncOptions:
+    - CreateNamespace=true
+```
 
 ## Deployment of Syntho Application using Helm
 
